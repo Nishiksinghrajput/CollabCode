@@ -51,6 +51,9 @@
   window.initializeSession = function(options) {
     const { userName, sessionCode, isNew, isAdmin } = options;
     
+    console.log('=== INITIALIZING SESSION ===');
+    console.log('User:', userName, 'Code:', sessionCode, 'New:', isNew, 'Admin:', isAdmin);
+    
     currentSessionCode = sessionCode;
     currentUser = {
       name: userName,
@@ -66,7 +69,10 @@
     
     // Update UI to show admin features if applicable
     if (isAdmin) {
-      document.getElementById('session-info').innerHTML += ' <span style="color: #4caf50">(Admin)</span>';
+      const sessionInfo = document.getElementById('session-info');
+      if (sessionInfo) {
+        sessionInfo.innerHTML += ' <span style="color: #4caf50">(Admin)</span>';
+      }
     }
   }
 
@@ -129,36 +135,45 @@
 
     // Initialize Firepad
     const currentLanguage = 'javascript';
-    firepad = Firepad.fromACE(firepadRef, editor, {
-      defaultText: defaultCode[currentLanguage],
-      userId: currentUser.id
-    });
-
-    // Setup presence system
-    setupPresence();
-
-    // Setup session info
-    setupSessionInfo();
-
-    // Sync language and theme settings
-    syncSettings();
-
-    // Load language modes dynamically
-    loadLanguageModes();
-
-    // Log when Firepad is ready
-    firepad.on('ready', function() {
-      console.log('🟢 Firepad READY! Session', currentSessionCode, 'is active');
+    
+    console.log('Creating Firepad instance...');
+    try {
+      firepad = Firepad.fromACE(firepadRef, editor, {
+        defaultText: defaultCode[currentLanguage],
+        userId: currentUser.id
+      });
       
-      // Check if there's existing content
-      const content = editor.getValue();
-      console.log('Session content length:', content.length);
+      console.log('✅ Firepad instance created');
       
-      if (!isNew) {
-        // Announce joining for existing session
-        showUserNotification(`You joined session ${currentSessionCode}`, 'join');
-      }
-    });
+      // Log when Firepad is ready
+      firepad.on('ready', function() {
+        console.log('🟢 Firepad READY! Session', currentSessionCode, 'is active');
+        
+        // Check if there's existing content
+        const content = editor.getValue();
+        console.log('Session content length:', content.length);
+        
+        if (!isNew) {
+          // Announce joining for existing session
+          showUserNotification(`You joined session ${currentSessionCode}`, 'join');
+        }
+      });
+      
+      // Setup presence system
+      setupPresence();
+
+      // Setup session info
+      setupSessionInfo();
+
+      // Sync language and theme settings
+      syncSettings();
+
+      // Load language modes dynamically
+      loadLanguageModes();
+      
+    } catch (error) {
+      console.error('❌ Failed to create Firepad:', error);
+    }
   }
 
   // Setup user presence
