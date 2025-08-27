@@ -105,11 +105,6 @@
       showPrintMargin: false
     });
 
-    // Apply performance optimizations
-    if (typeof RealtimeOptimizer !== 'undefined') {
-      RealtimeOptimizer.optimizeACE(editor);
-    }
-
     // Update cursor position
     editor.on('changeSelection', updateCursorPosition);
   }
@@ -132,26 +127,12 @@
     console.log('Current user:', currentUser);
     console.log('=====================');
 
-    // Optimize Firebase connection
-    if (typeof RealtimeOptimizer !== 'undefined') {
-      RealtimeOptimizer.optimizeFirebase();
-      RealtimeOptimizer.monitorLatency();
-    }
-
-    // Initialize Firepad with optimizations
+    // Initialize Firepad
     const currentLanguage = 'javascript';
-    
-    if (typeof RealtimeOptimizer !== 'undefined') {
-      firepad = RealtimeOptimizer.createOptimizedFirepad(firepadRef, editor, {
-        defaultText: defaultCode[currentLanguage],
-        userId: currentUser.id
-      });
-    } else {
-      firepad = Firepad.fromACE(firepadRef, editor, {
-        defaultText: defaultCode[currentLanguage],
-        userId: currentUser.id
-      });
-    }
+    firepad = Firepad.fromACE(firepadRef, editor, {
+      defaultText: defaultCode[currentLanguage],
+      userId: currentUser.id
+    });
 
     // Setup presence system
     setupPresence();
