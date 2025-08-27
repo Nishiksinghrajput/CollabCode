@@ -177,7 +177,15 @@
   }
 
   // Setup user presence
+  let presenceSetup = false;
   function setupPresence() {
+    // Prevent duplicate setup
+    if (presenceSetup) {
+      console.log('Presence already setup, skipping...');
+      return;
+    }
+    presenceSetup = true;
+    
     const userRef = usersRef.child(currentUser.id);
     
     console.log('Setting up presence for user:', currentUser.name);
@@ -197,10 +205,13 @@
     // Remove user on disconnect
     userRef.onDisconnect().remove();
 
+    // Remove any existing listeners first
+    usersRef.off('value');
+    
     // Listen for user changes
     usersRef.on('value', function(snapshot) {
       const users = snapshot.val() || {};
-      console.log('Users in session:', Object.keys(users).length, users);
+      console.log('Users in session:', Object.keys(users).length);
       updateUsersList(users);
       detectUserChanges(users);
       updateUserCount(users);
@@ -217,18 +228,28 @@
   }
 
   // Detect user joins/leaves
+  let isFirstUserUpdate = true;
   function detectUserChanges(currentUsers) {
+    // Skip the first update to avoid false notifications
+    if (isFirstUserUpdate) {
+      isFirstUserUpdate = false;
+      previousUsers = {...currentUsers};
+      return;
+    }
+    
     const currentIds = Object.keys(currentUsers);
     const previousIds = Object.keys(previousUsers);
     
-    // Check for new users
-    currentIds.forEach(userId => {
-      if (!previousIds.includes(userId) && userId !== currentUser.id) {
-        const user = currentUsers[userId];
-        showUserNotification(`${user.name} joined the session`, 'join');
-        playNotificationSound('join');
-      }
-    });
+    // Check for new users (only if we had previous users to compare)
+    if (previousIds.length > 0) {
+      currentIds.forEach(userId => {
+        if (!previousIds.includes(userId) && userId !== currentUser.id) {
+          const user = currentUsers[userId];
+          showUserNotification(`${user.name} joined the session`, 'join');
+          playNotificationSound('join');
+        }
+      });
+    }
     
     // Check for users who left
     previousIds.forEach(userId => {
@@ -245,7 +266,34 @@
   }
 
   // Show user notification
+  let notificationQueue = [];
+  let isShowingNotification = false;
+  
   function showUserNotification(message, type) {
+    // Add to queue
+    notificationQueue.push({ message, type });
+    
+    // Process queue if not already processing
+    if (!isShowingNotification) {
+      processNotificationQueue();
+    }
+  }
+  
+  function processNotificationQueue() {
+    if (notificationQueue.length === 0) {
+      isShowingNotification = false;
+      return;
+    }
+    
+    isShowingNotification = true;
+    const { message, type } = notificationQueue.shift();
+    
+    // Remove any existing notifications
+    const existing = document.querySelector('.user-notification');
+    if (existing) {
+      existing.remove();
+    }
+    
     const notification = document.createElement('div');
     notification.className = `user-notification ${type}`;
     notification.innerHTML = `
@@ -256,8 +304,12 @@
 
     setTimeout(() => {
       notification.style.animation = 'fadeOut 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
+      setTimeout(() => {
+        notification.remove();
+        // Process next notification
+        setTimeout(() => processNotificationQueue(), 100);
+      }, 300);
+    }, 2000);
   }
 
   // Play notification sound (optional)
