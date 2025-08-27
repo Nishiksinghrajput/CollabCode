@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Simple Collaborative Editor - TEST</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1e1e1e;
+        }
+        #controls {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        #controls input, #controls button {
+            padding: 8px 15px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        #firepad {
+            height: 500px;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+        }
+        #status {
+            color: #4caf50;
+            margin-top: 10px;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase.js"></script>
+    
+    <!-- ACE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.5/ace.js"></script>
+    
+    <!-- Firepad -->
+    <script src="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.css" />
+</head>
+<body>
+    <div id="controls">
+        <h2>Simple Collaborative Editor Test</h2>
+        <input type="text" id="userName" placeholder="Enter your name" value="User">
+        <input type="text" id="sessionCode" placeholder="6-digit code" maxlength="6">
+        <button onclick="createSession()">Create Session</button>
+        <button onclick="joinSession()">Join Session</button>
+        <div id="status"></div>
+    </div>
+    
+    <div id="firepad"></div>
+    
+    <script>
+        // Simple Firebase config
+        var config = {
+            apiKey: "AIzaSyDaTXD54QykZ7IIT8Ji9mZBqxhijRKLd3U",
+            authDomain: "sneakers-688b6.firebaseapp.com",
+            databaseURL: "https://sneakers-688b6.firebaseio.com",
+            storageBucket: "sneakers-688b6.appspot.com",
+            messagingSenderId: "553327129273"
+        };
+        
+        firebase.initializeApp(config);
+        
+        let editor = null;
+        let firepad = null;
+        
+        function log(message, isError = false) {
+            const status = document.getElementById('status');
+            status.className = isError ? 'error' : '';
+            status.textContent = message;
+            console.log(message);
+        }
+        
+        function initEditor() {
+            // Create ACE editor
+            editor = ace.edit('firepad');
+            editor.setTheme('ace/theme/monokai');
+            editor.getSession().setMode('ace/mode/javascript');
+            log('Editor initialized');
+        }
+        
+        function createSession() {
+            const userName = document.getElementById('userName').value || 'User';
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            document.getElementById('sessionCode').value = code;
+            
+            initializeFirepad(code, userName);
+            log('Created session: ' + code);
+        }
+        
+        function joinSession() {
+            const userName = document.getElementById('userName').value || 'User';
+            const code = document.getElementById('sessionCode').value;
+            
+            if (!code || code.length !== 6) {
+                log('Please enter a 6-digit code', true);
+                return;
+            }
+            
+            initializeFirepad(code, userName);
+            log('Joining session: ' + code);
+        }
+        
+        function initializeFirepad(sessionCode, userName) {
+            // Clean up existing Firepad
+            if (firepad) {
+                firepad.dispose();
+                firepad = null;
+            }
+            
+            // Initialize editor if needed
+            if (!editor) {
+                initEditor();
+            }
+            
+            // Create Firepad reference
+            const firepadRef = firebase.database().ref('simple-sessions/' + sessionCode);
+            
+            // Create Firepad instance
+            firepad = Firepad.fromACE(firepadRef, editor, {
+                defaultText: '// Session ' + sessionCode + '\n// User: ' + userName + '\n\nfunction hello() {\n  console.log("Hello World!");\n}',
+                userId: userName + '_' + Date.now()
+            });
+            
+            // Log when ready
+            firepad.on('ready', function() {
+                log('✅ Connected to session ' + sessionCode + ' as ' + userName);
+                window.location.hash = sessionCode;
+            });
+            
+            // Test real-time sync
+            firepadRef.child('test').on('value', function(snapshot) {
+                console.log('Real-time test:', snapshot.val());
+            });
+        }
+        
+        // Auto-join if there's a session in URL
+        window.onload = function() {
+            const hash = window.location.hash.replace('#', '');
+            if (hash && hash.length === 6) {
+                document.getElementById('sessionCode').value = hash;
+                // Auto-join after a short delay
+                setTimeout(() => joinSession(), 500);
+            }
+        };
+        
+        // Test Firebase connection
+        firebase.database().ref('.info/connected').on('value', function(snapshot) {
+            if (snapshot.val() === true) {
+                console.log('Firebase connected');
+            } else {
+                console.log('Firebase disconnected');
+            }
+        });
+    </script>
+</body>
+</html>

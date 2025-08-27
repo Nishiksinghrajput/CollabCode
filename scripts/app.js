@@ -8,18 +8,28 @@
   }
 
   // Setup landing page
+  let landingSetup = false;
   function setupLandingPage() {
+    if (landingSetup) return;
+    landingSetup = true;
+    
     // Candidate button
-    document.querySelector('.candidate-btn').addEventListener('click', function() {
-      document.getElementById('landingModal').style.display = 'none';
-      document.getElementById('candidateModal').style.display = 'flex';
-    });
+    const candidateBtn = document.querySelector('.candidate-btn');
+    if (candidateBtn) {
+      candidateBtn.addEventListener('click', function() {
+        document.getElementById('landingModal').style.display = 'none';
+        document.getElementById('candidateModal').style.display = 'flex';
+      });
+    }
 
     // Admin button
-    document.querySelector('.admin-btn').addEventListener('click', function() {
-      document.getElementById('landingModal').style.display = 'none';
-      document.getElementById('adminLoginModal').style.display = 'flex';
-    });
+    const adminBtn = document.querySelector('.admin-btn');
+    if (adminBtn) {
+      adminBtn.addEventListener('click', function() {
+        document.getElementById('landingModal').style.display = 'none';
+        document.getElementById('adminLoginModal').style.display = 'flex';
+      });
+    }
   }
 
   // Setup candidate flow
@@ -187,8 +197,13 @@
     }
   }
 
-  // Check for existing session on load
-  window.addEventListener('load', function() {
+  // Initialize once and only once
+  let initialized = false;
+  
+  function initOnce() {
+    if (initialized) return;
+    initialized = true;
+    
     const session = Auth.getCurrentSession();
     const urlCode = window.location.hash.replace('#', '');
 
@@ -199,12 +214,12 @@
       // Show landing page
       init();
     }
-  });
+  }
 
-  // Initialize on DOM ready
+  // Initialize when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initOnce);
   } else {
-    init();
+    initOnce();
   }
 })();
