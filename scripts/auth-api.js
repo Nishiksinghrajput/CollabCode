@@ -102,9 +102,10 @@ const Auth = (function() {
       
       return { success: false, error: data.error || 'Authentication failed' };
     } catch (error) {
+      console.error('API login error:', error);
       return { 
         success: false, 
-        error: error.message || 'Network error. Please check your connection.' 
+        error: 'Server connection failed. Please check if the API is running.'
       };
     }
   }
@@ -220,6 +221,15 @@ const Auth = (function() {
     }, 5 * 60 * 1000);
   }
   
+  // Get current session (compatibility with app.js)
+  function getCurrentSession() {
+    return {
+      isAdmin: session.isAdmin,
+      userName: session.userName,
+      email: session.email
+    };
+  }
+  
   // Public API
   return {
     loginAdmin,
@@ -228,6 +238,7 @@ const Auth = (function() {
     isAdmin,
     isAuthenticated,
     getCurrentUser,
+    getCurrentSession,  // Added for compatibility
     getAuthHeaders,
     verifySession
   };

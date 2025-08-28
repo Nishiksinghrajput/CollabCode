@@ -26,10 +26,33 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { email, password } = req.body;
+  // Parse body if it's a string (Vercel sometimes doesn't parse JSON automatically)
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid JSON in request body' });
+    }
+  }
+
+  // Debug logging (remove in production)
+  console.log('Request body type:', typeof req.body);
+  console.log('Request body:', req.body);
+  console.log('Parsed body:', body);
+
+  const { email, password } = body || {};
 
   if (!email || !password) {
-    return res.status(400).json({ error: 'Email and password required' });
+    return res.status(400).json({ 
+      error: 'Email and password required',
+      debug: process.env.NODE_ENV !== 'production' ? {
+        bodyType: typeof req.body,
+        hasBody: !!req.body,
+        hasEmail: !!email,
+        hasPassword: !!password
+      } : undefined
+    });
   }
 
   try {

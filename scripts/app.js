@@ -98,19 +98,33 @@
     });
 
     // Login
-    adminLoginBtn.addEventListener('click', function() {
+    adminLoginBtn.addEventListener('click', async function() {
       const email = adminEmail.value.trim();
       const password = adminPassword.value;
 
-      const result = Auth.loginAdmin(email, password);
-      
-      if (result.success) {
-        document.getElementById('adminLoginModal').style.display = 'none';
-        document.getElementById('adminDashboardModal').style.display = 'flex';
-        setupAdminDashboard();
-      } else {
-        loginError.textContent = result.error;
+      // Show loading state
+      adminLoginBtn.disabled = true;
+      adminLoginBtn.textContent = 'Logging in...';
+      loginError.style.display = 'none';
+
+      try {
+        const result = await Auth.loginAdmin(email, password);
+        
+        if (result.success) {
+          document.getElementById('adminLoginModal').style.display = 'none';
+          document.getElementById('adminDashboardModal').style.display = 'flex';
+          setupAdminDashboard();
+        } else {
+          loginError.textContent = result.error;
+          loginError.style.display = 'block';
+        }
+      } catch (error) {
+        loginError.textContent = 'Login failed. Please try again.';
         loginError.style.display = 'block';
+      } finally {
+        // Reset button state
+        adminLoginBtn.disabled = false;
+        adminLoginBtn.textContent = 'Login';
       }
     });
 
