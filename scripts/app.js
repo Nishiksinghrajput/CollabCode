@@ -174,14 +174,29 @@
 
     // Create new session
     createSessionBtn.addEventListener('click', function() {
+      // Check if already starting
+      if (sessionStarting) {
+        console.warn('CREATE SESSION: Already starting a session, ignoring click');
+        return;
+      }
+      
       const sessionCode = Math.floor(100000 + Math.random() * 900000).toString();
-      window.location.hash = sessionCode;
+      console.log('CREATE SESSION: Generated code:', sessionCode);
+      console.trace('CREATE SESSION: Stack trace for debugging');
       
       // Show active session
       document.getElementById('activeSessionCode').textContent = sessionCode;
       document.getElementById('activeSession').style.display = 'block';
+      console.log('CREATE SESSION: Set activeSessionCode display to:', sessionCode);
       
-      // Start session
+      // Hide the dashboard modal immediately
+      document.getElementById('adminDashboardModal').style.display = 'none';
+      
+      // Now set the hash (this might trigger hashchange/load events)
+      window.location.hash = sessionCode;
+      console.log('CREATE SESSION: Current URL hash:', window.location.hash);
+      
+      // Start session - DON'T set sessionStarting here, let startSession handle it
       startSession('Interviewer', sessionCode, true);
     });
 
@@ -309,16 +324,28 @@
     if (endSelectedBtn) {
       endSelectedBtn.addEventListener('click', function() {
         const selected = document.querySelectorAll('.session-checkbox:checked');
-        const sessionCodes = Array.from(selected).map(cb => cb.getAttribute('data-code'));
+        console.log('End Selected clicked, found checkboxes:', selected.length);
         
-        if (sessionCodes.length === 0) return;
+        const sessionCodes = Array.from(selected).map(cb => cb.getAttribute('data-code'));
+        console.log('Session codes to terminate:', sessionCodes);
+        
+        if (sessionCodes.length === 0) {
+          console.log('No sessions selected');
+          return;
+        }
         
         const message = sessionCodes.length === 1 
           ? `End session ${sessionCodes[0]}?`
           : `End ${sessionCodes.length} selected sessions?`;
           
         if (confirm(message + ' All participants will be disconnected.')) {
-          sessionCodes.forEach(code => terminateSessionFromDashboard(code));
+          console.log('User confirmed, terminating sessions...');
+          sessionCodes.forEach(code => {
+            console.log('Terminating:', code);
+            terminateSessionFromDashboard(code);
+          });
+        } else {
+          console.log('User cancelled termination');
         }
       });
     }
@@ -395,13 +422,13 @@
     }
     
     // Check current tab
-    const showArchived = archivedTabBtn && archivedTabBtn.classList.contains('active');
+    const isShowingArchived = archivedTabBtn && archivedTabBtn.classList.contains('active');
     
     // Check if Firebase is loaded
     if (!window.firebase || !window.firebase.database) {
       console.log('Waiting for Firebase to load...');
       sessionsTableBody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Connecting to database...</td></tr>';
-      setTimeout(() => loadActiveSessions(showArchived), 1500);
+      setTimeout(() => loadActiveSessions(isShowingArchived), 1500);
       return;
     }
     
@@ -470,12 +497,12 @@
       noSessionsMessage.style.display = 'none';
       
       // Choose which sessions to display
-      const sessionsToDisplay = showArchived ? archivedSessions : activeSessions;
+      const sessionsToDisplay = (archivedTabBtn && archivedTabBtn.classList.contains('active')) ? archivedSessions : activeSessions;
       
       if (sessionsToDisplay.length === 0) {
         sessionsTable.style.display = 'none';
         noSessionsMessage.style.display = 'block';
-        noSessionsMessage.innerHTML = showArchived 
+        noSessionsMessage.innerHTML = (archivedTabBtn && archivedTabBtn.classList.contains('active'))
           ? '<p>No archived sessions</p>' 
           : '<p>No active sessions</p>';
         return;
@@ -554,32 +581,43 @@
           </td>
         `;
         
-        // Add checkbox change handler
-        row.querySelector('.session-checkbox').addEventListener('change', updateBulkActionButtons);
+        // Add checkbox change handler (only for active sessions)
+        const checkbox = row.querySelector('.session-checkbox');
+        if (checkbox) {
+          checkbox.addEventListener('change', updateBulkActionButtons);
+        }
         
         sessionsTableBody.appendChild(row);
         
         // Add join button handler
-        row.querySelector('.join-btn').addEventListener('click', function() {
-          const code = this.getAttribute('data-code');
-          document.getElementById('sessionsModal').style.display = 'none';
-          window.location.hash = code;
-          startSession('Interviewer', code, false);
-        });
+        const joinBtn = row.querySelector('.join-btn');
+        if (joinBtn) {
+          joinBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            document.getElementById('sessionsModal').style.display = 'none';
+            window.location.hash = code;
+            startSession('Interviewer', code, false);
+          });
+        }
         
         // Add terminate button handler
-        row.querySelector('.terminate-btn').addEventListener('click', function() {
-          const code = this.getAttribute('data-code');
-          if (confirm(`End interview session ${code}? All participants will be disconnected.`)) {
-            terminateSessionFromDashboard(code);
-          }
-        });
+        const terminateBtn = row.querySelector('.terminate-btn');
+        if (terminateBtn) {
+          terminateBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            if (confirm(`End interview session ${code}? All participants will be disconnected.`)) {
+              terminateSessionFromDashboard(code);
+            }
+          });
+        }
       });
     });
   }
   
   // Terminate session from dashboard
   function terminateSessionFromDashboard(sessionCode) {
+    console.log('Terminating session:', sessionCode);
+    
     if (!window.firebase || !window.firebase.database) {
       alert('Database connection not ready');
       return;
@@ -590,15 +628,38 @@
       terminatedBy: 'Admin Dashboard',
       terminatedAt: window.firebase.database.ServerValue.TIMESTAMP
     }).then(function() {
-      console.log('Session ' + sessionCode + ' terminated');
+      console.log('Session ' + sessionCode + ' terminated successfully');
+      // Show feedback
+      showNotification('Session ' + sessionCode + ' has been terminated');
     }).catch(function(error) {
       console.error('Error terminating session:', error);
-      alert('Failed to terminate session');
+      alert('Failed to terminate session: ' + error.message);
     });
   }
+  
+  // Show notification helper
+  function showNotification(message) {
+    // Simple notification (you can enhance this)
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 10px 20px; border-radius: 4px; z-index: 10000;';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  }
 
+  // Track if session is starting to prevent duplicates
+  let sessionStarting = false;
+  
   // Start coding session
   async function startSession(userName, sessionCode, isNew) {
+    // Prevent duplicate session starts
+    if (sessionStarting) {
+      console.warn('Session already starting, preventing duplicate');
+      return;
+    }
+    sessionStarting = true;
+    
+    console.log('START SESSION:', userName, sessionCode, 'isNew:', isNew);
     // Validate session first (for existing sessions)
     if (!isNew) {
       const validation = await validateSession(sessionCode);
@@ -626,26 +687,80 @@
         isAdmin: Auth.isAdmin()
       });
     }
+    
+    // Reset flag after a delay to allow future navigation
+    setTimeout(() => {
+      sessionStarting = false;
+    }, 2000);
   }
 
-  // Check for existing session on load
+  // Track if this is initial page load
+  let isInitialLoad = true;
+  
+  // Check for existing session on load - ONLY for page refreshes
   window.addEventListener('load', function() {
+    console.log('PAGE LOAD EVENT FIRED - isInitialLoad:', isInitialLoad);
+    
+    // If this is NOT the initial page load, skip (means we navigated after page was already loaded)
+    if (!isInitialLoad) {
+      console.log('PAGE LOAD: Not initial load, skipping');
+      return;
+    }
+    isInitialLoad = false;
+    
+    // Don't run if we're already starting a session
+    if (sessionStarting) {
+      console.log('PAGE LOAD: Session already starting, skipping load handler');
+      return;
+    }
+    
+    // Check if we're already in a session (main container visible means session is active)
+    const mainContainer = document.getElementById('main-container');
+    if (mainContainer && mainContainer.style.display !== 'none') {
+      console.log('PAGE LOAD: Already in a session, skipping');
+      return;
+    }
+    
     const session = Auth.getCurrentSession();
     const urlCode = window.location.hash.replace('#', '');
+    
+    console.log('PAGE LOAD: Session logged in?', session.isLoggedIn, 'URL code:', urlCode);
 
+    // Only auto-join if we have a URL code AND we're logged in (for page refresh scenarios)
     if (session.isLoggedIn && urlCode) {
-      // Resume existing session
+      console.log('PAGE LOAD: This should only run on page refresh! Resuming session with code from URL:', urlCode);
+      console.trace('PAGE LOAD: Stack trace');
+      // Resume existing session - this is ONLY for when someone refreshes the page
       startSession(session.userName, urlCode, false);
     } else {
+      console.log('PAGE LOAD: Showing landing page');
       // Show landing page
       init();
     }
   });
 
-  // Initialize on DOM ready
+  // Initialize on DOM ready (but only if not already handling via load event)
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM READY: Checking if should init...');
+      const urlCode = window.location.hash.replace('#', '');
+      const session = Auth.getCurrentSession();
+      
+      // Only init if we're not going to handle this in the load event
+      if (!session.isLoggedIn || !urlCode) {
+        console.log('DOM READY: Calling init()');
+        init();
+      } else {
+        console.log('DOM READY: Skipping init, will handle in load event');
+      }
+    });
   } else {
-    init();
+    // Document already loaded, check same conditions
+    const urlCode = window.location.hash.replace('#', '');
+    const session = Auth.getCurrentSession();
+    if (!session.isLoggedIn || !urlCode) {
+      console.log('IMMEDIATE: Calling init()');
+      init();
+    }
   }
 })();

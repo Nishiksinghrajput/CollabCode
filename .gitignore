@@ -1,9 +1,62 @@
-/.vscode
-/node_modules
-/coverage
-firebase-debug.log
-npm-debug.log
+# Dependencies
+node_modules/
+package-lock.json
 
-.DS_Store
-.idea
+# Environment Variables - NEVER COMMIT THESE
+.env
+.env.local
+.env.production
+.env.development
+.env.example.filled
+
+# Firebase
+firebase-admin-key.json
+serviceAccountKey.json
+firebase-debug.log
+.firebase/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
 *.iml
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+coverage/
+.nyc_output/
+
+# Production builds
+dist/
+build/
+
+# Temporary files
+tmp/
+temp/
+
+# Security - CRITICAL
+*.pem
+*.key
+*.cert
+*.crt
+auth.js
+credentials.json
+
+# Backups
+*.backup
+*.bak
+.vercel

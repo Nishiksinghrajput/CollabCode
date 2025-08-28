@@ -1,8 +1,10 @@
 {
   "database": {
-    "rules": "database.rules.json"
+    "rules": "database.rules.secure.json"
   },
-  "hosting": {
-    "public": "./"
+  "emulators": {
+    "database": {
+      "port": 9000
+    }
   }
 }

@@ -16,11 +16,13 @@
   // Session termination modal HTML
   const terminationModalHTML = `
     <div id="session-terminated-modal" class="modal" style="display: none; z-index: 10000;">
-      <div class="modal-content">
-        <h2>Interview Ended</h2>
-        <p>This interview has been terminated by the interviewer.</p>
-        <p>Thank you for your participation!</p>
-        <button onclick="location.reload()" class="primary-btn">Return to Home</button>
+      <div class="modal-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: 2px solid #fff; box-shadow: 0 20px 60px rgba(102, 126, 234, 0.5);">
+        <h2 style="color: #ffffff; font-size: 28px; margin-bottom: 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Interview Ended</h2>
+        <div style="background: rgba(255,255,255,0.95); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <p style="color: #333; font-size: 16px; margin-bottom: 10px;">This interview has been terminated by the interviewer.</p>
+          <p style="color: #555; font-size: 15px;">Thank you for your participation!</p>
+        </div>
+        <button onclick="location.reload()" class="primary-btn" style="background: #fff; color: #667eea; font-weight: bold; font-size: 16px; padding: 12px 30px; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">Return to Home</button>
       </div>
     </div>
   `;

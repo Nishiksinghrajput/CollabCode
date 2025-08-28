@@ -44,7 +44,7 @@
     <!-- Code Executor -->
     <script src="/scripts/code-executor.js"></script>
     <!-- Authentication -->
-    <script src="/scripts/auth.js"></script>
+    <script src="/scripts/auth-api.js"></script>
   </head>
   <body>
     <!-- Landing Modal -->
@@ -331,8 +331,34 @@
       </div>
     </div>
 
+    <!-- Custom Alert Modal -->
+    <div id="customAlertModal" class="custom-modal" style="display: none;">
+      <div class="custom-modal-content">
+        <div class="custom-modal-icon"></div>
+        <h3 class="custom-modal-title"></h3>
+        <p class="custom-modal-message"></p>
+        <div class="custom-modal-buttons">
+          <button class="custom-modal-btn primary" onclick="closeCustomAlert()">OK</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Custom Confirm Modal -->
+    <div id="customConfirmModal" class="custom-modal" style="display: none;">
+      <div class="custom-modal-content">
+        <div class="custom-modal-icon"></div>
+        <h3 class="custom-modal-title"></h3>
+        <p class="custom-modal-message"></p>
+        <div class="custom-modal-buttons">
+          <button class="custom-modal-btn cancel" onclick="handleConfirmResponse(false)">Cancel</button>
+          <button class="custom-modal-btn confirm" onclick="handleConfirmResponse(true)">Confirm</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Simple Templates (must load before firepad.js) -->
     <script src="/scripts/simple-templates.js"></script>
+    <script src="/scripts/custom-dialogs.js"></script>
     <script src="/scripts/firepad.js"></script>
     <script src="/scripts/app.js"></script>
   </body>

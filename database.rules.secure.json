@@ -1,0 +1,44 @@
+{
+  "rules": {
+    "sessions": {
+      "$sessionId": {
+        // Anyone can read sessions (needed for candidates to join)
+        ".read": true,
+        
+        // Session creation and modification rules
+        ".write": "auth != null || !data.exists() || root.child('sessions').child($sessionId).child('createdBy').val() === 'Interviewer'",
+        
+        // Structure validation
+        ".validate": "$sessionId.matches(/^[0-9]{6}$/)",
+        
+        "users": {
+          "$userId": {
+            // Users can only write their own data
+            ".write": true,
+            ".validate": "newData.hasChildren(['name', 'timestamp'])"
+          }
+        },
+        
+        "firepad": {
+          // Anyone in the session can edit code
+          ".write": true
+        },
+        
+        "terminated": {
+          // Only allow setting terminated flag, not unsetting
+          ".write": "!data.exists() && newData.child('terminated').val() === true"
+        },
+        
+        "created": {
+          // Timestamp can only be set once
+          ".write": "!data.exists()"
+        },
+        
+        "createdBy": {
+          // Creator can only be set once
+          ".write": "!data.exists()"
+        }
+      }
+    }
+  }
+}
