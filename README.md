@@ -235,6 +235,7 @@ MIT License - see LICENSE file for details
 
 For issues or questions:
 - Email: infrastructure@atomtickets.com
+- Author: Archith
 - Open an issue on GitHub
 
 ---

@@ -9,17 +9,23 @@
 
   // Setup landing page
   function setupLandingPage() {
-    // Candidate button
-    document.querySelector('.candidate-btn').addEventListener('click', function() {
-      document.getElementById('landingModal').style.display = 'none';
-      document.getElementById('candidateModal').style.display = 'flex';
-    });
+    // Candidate button - support both old and new classes
+    const candidateBtn = document.querySelector('.candidate-btn, .atom-btn-secondary');
+    if (candidateBtn) {
+      candidateBtn.addEventListener('click', function() {
+        document.getElementById('landingModal').style.display = 'none';
+        document.getElementById('candidateModal').style.display = 'flex';
+      });
+    }
 
-    // Admin button
-    document.querySelector('.admin-btn').addEventListener('click', function() {
-      document.getElementById('landingModal').style.display = 'none';
-      document.getElementById('adminLoginModal').style.display = 'flex';
-    });
+    // Admin button - support both old and new classes  
+    const adminBtn = document.querySelector('.admin-btn, .atom-btn-primary');
+    if (adminBtn) {
+      adminBtn.addEventListener('click', function() {
+        document.getElementById('landingModal').style.display = 'none');
+        document.getElementById('adminLoginModal').style.display = 'flex';
+      });
+    }
   }
 
   // Setup candidate flow
