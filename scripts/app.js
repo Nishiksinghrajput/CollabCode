@@ -166,6 +166,11 @@
           if (e.key === 'Escape') {
             modal.style.display = 'none';
             document.removeEventListener('keydown', escHandler);
+            // Clean up the listener
+            if (sessionsListener) {
+              window.firebase.database().ref('sessions').off('value', sessionsListener);
+              sessionsListener = null;
+            }
           }
         };
         document.addEventListener('keydown', escHandler);
@@ -174,6 +179,11 @@
         modal.addEventListener('click', function(e) {
           if (e.target === modal) {
             modal.style.display = 'none';
+            // Clean up the listener
+            if (sessionsListener) {
+              window.firebase.database().ref('sessions').off('value', sessionsListener);
+              sessionsListener = null;
+            }
           }
         });
       });
@@ -183,6 +193,11 @@
     if (closeSessionsModalBtn) {
       closeSessionsModalBtn.addEventListener('click', function() {
         document.getElementById('sessionsModal').style.display = 'none';
+        // Clean up the listener when modal is closed
+        if (sessionsListener) {
+          window.firebase.database().ref('sessions').off('value', sessionsListener);
+          sessionsListener = null;
+        }
       });
     }
 
@@ -396,6 +411,9 @@
     }
   }
   
+  // Store the sessions listener reference globally to prevent duplicates
+  let sessionsListener = null;
+  
   // Load all active sessions for admin
   function loadActiveSessions(showArchived = false) {
     const sessionsTableBody = document.getElementById('sessionsTableBody');
@@ -446,8 +464,14 @@
       return;
     }
     
-    // Listen for all sessions
-    window.firebase.database().ref('sessions').on('value', function(snapshot) {
+    // Remove existing listener if it exists to prevent duplicates
+    if (sessionsListener) {
+      window.firebase.database().ref('sessions').off('value', sessionsListener);
+      sessionsListener = null;
+    }
+    
+    // Create the listener function
+    sessionsListener = function(snapshot) {
       const sessions = snapshot.val() || {};
       sessionsTableBody.innerHTML = '';
       
@@ -625,7 +649,10 @@
           });
         }
       });
-    });
+    };
+    
+    // Attach the listener for real-time updates
+    window.firebase.database().ref('sessions').on('value', sessionsListener);
   }
   
   // Terminate session from dashboard
