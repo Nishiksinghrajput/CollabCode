@@ -13,7 +13,19 @@
   let isInitialized = false;
   let firepadReady = false;
   
-  // Language mode mappings
+  // Session termination modal HTML
+  const terminationModalHTML = `
+    <div id="session-terminated-modal" class="modal" style="display: none; z-index: 10000;">
+      <div class="modal-content">
+        <h2>Interview Ended</h2>
+        <p>This interview has been terminated by the interviewer.</p>
+        <p>Thank you for your participation!</p>
+        <button onclick="location.reload()" class="primary-btn">Return to Home</button>
+      </div>
+    </div>
+  `;
+  
+  // Language mode configurations
   const languageConfig = {
     javascript: { mode: 'ace/mode/javascript', ext: 'js' },
     python: { mode: 'ace/mode/python', ext: 'py' },
@@ -27,30 +39,29 @@
     typescript: { mode: 'ace/mode/typescript', ext: 'ts' },
     swift: { mode: 'ace/mode/swift', ext: 'swift' },
     kotlin: { mode: 'ace/mode/kotlin', ext: 'kt' },
+    scala: { mode: 'ace/mode/scala', ext: 'scala' },
+    r: { mode: 'ace/mode/r', ext: 'r' },
+    perl: { mode: 'ace/mode/perl', ext: 'pl' },
+    lua: { mode: 'ace/mode/lua', ext: 'lua' },
+    haskell: { mode: 'ace/mode/haskell', ext: 'hs' },
+    elixir: { mode: 'ace/mode/elixir', ext: 'ex' },
+    dart: { mode: 'ace/mode/dart', ext: 'dart' },
     html: { mode: 'ace/mode/html', ext: 'html' },
     css: { mode: 'ace/mode/css', ext: 'css' },
     sql: { mode: 'ace/mode/sql', ext: 'sql' },
+    json: { mode: 'ace/mode/json', ext: 'json' },
+    yaml: { mode: 'ace/mode/yaml', ext: 'yaml' },
+    xml: { mode: 'ace/mode/xml', ext: 'xml' },
     markdown: { mode: 'ace/mode/markdown', ext: 'md' }
   };
 
-  // Default code examples for each language
-  const defaultCode = {
-    javascript: '// Welcome to Collaborative Code Editor!\n\nfunction greet(name) {\n  console.log(`Hello, ${name}!`);\n}\n\ngreet("World");',
-    python: '# Welcome to Collaborative Code Editor!\n\ndef greet(name):\n    print(f"Hello, {name}!")\n\ngreet("World")',
-    java: '// Welcome to Collaborative Code Editor!\n\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, World!");\n    }\n}',
-    c_cpp: '// Welcome to Collaborative Code Editor!\n\n#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello, World!" << endl;\n    return 0;\n}',
-    csharp: '// Welcome to Collaborative Code Editor!\n\nusing System;\n\nclass Program {\n    static void Main() {\n        Console.WriteLine("Hello, World!");\n    }\n}',
-    php: '<?php\n// Welcome to Collaborative Code Editor!\n\nfunction greet($name) {\n    echo "Hello, $name!";\n}\n\ngreet("World");\n?>',
-    ruby: '# Welcome to Collaborative Code Editor!\n\ndef greet(name)\n  puts "Hello, #{name}!"\nend\n\ngreet("World")',
-    go: '// Welcome to Collaborative Code Editor!\n\npackage main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello, World!")\n}',
-    rust: '// Welcome to Collaborative Code Editor!\n\nfn main() {\n    println!("Hello, World!");\n}',
-    typescript: '// Welcome to Collaborative Code Editor!\n\nfunction greet(name: string): void {\n  console.log(`Hello, ${name}!`);\n}\n\ngreet("World");',
-    swift: '// Welcome to Collaborative Code Editor!\n\nimport Foundation\n\nfunc greet(_ name: String) {\n    print("Hello, \\(name)!")\n}\n\ngreet("World")',
-    kotlin: '// Welcome to Collaborative Code Editor!\n\nfun main() {\n    println("Hello, World!")\n}',
-    html: '<!DOCTYPE html>\n<html lang="en">\n<head>\n    <meta charset="UTF-8">\n    <title>Welcome</title>\n</head>\n<body>\n    <h1>Hello, World!</h1>\n</body>\n</html>',
-    css: '/* Welcome to Collaborative Code Editor! */\n\nbody {\n    font-family: Arial, sans-serif;\n    background: #f0f0f0;\n    color: #333;\n}\n\nh1 {\n    color: #007acc;\n}',
-    sql: '-- Welcome to Collaborative Code Editor!\n\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    email VARCHAR(100)\n);\n\nSELECT * FROM users;',
-    markdown: '# Welcome to Collaborative Code Editor!\n\n## Features\n\n- Real-time collaboration\n- Multiple language support\n- Syntax highlighting\n- Live presence indicators\n\n### Getting Started\n\n1. Share the session code with your team\n2. Start coding together!\n3. See changes in real-time'
+  // Get default code for each language
+  const getDefaultCode = (language) => {
+    if (typeof window.SimpleTemplates !== 'undefined' && window.SimpleTemplates[language]) {
+      return window.SimpleTemplates[language];
+    }
+    // Fallback
+    return '// Welcome to Collaborative Code Editor!\n// Start coding here...';
   };
 
   // Initialize the application (called from app.js)
@@ -80,11 +91,25 @@
     initializeFirebase(isNew);
     setupEventListenersOnce();
     
-    // Update UI for admin
+    // Update UI based on role
+    const endSessionBtn = document.getElementById('end-session-btn');
+    
     if (isAdmin) {
+      console.log('Admin user detected - showing End Interview button');
       const sessionInfo = document.getElementById('session-info');
       if (sessionInfo && !sessionInfo.innerHTML.includes('Admin')) {
         sessionInfo.innerHTML += ' <span style="color: #4caf50">(Admin)</span>';
+      }
+      
+      // Admin keeps the button visible (it's visible by default now)
+      if (endSessionBtn) {
+        console.log('End Interview button is visible for admin');
+      }
+    } else {
+      console.log('Non-admin user - hiding End Interview button');
+      // Hide button for non-admin users
+      if (endSessionBtn) {
+        endSessionBtn.style.display = 'none';
       }
     }
   }
@@ -106,17 +131,28 @@
     session.setUseWorker(false);
     session.setMode("ace/mode/javascript");
     
+    // Enable autocomplete and ensure editor is interactive
     editor.setOptions({
       enableBasicAutocompletion: true,
       enableSnippets: true,
       enableLiveAutocompletion: false, // Disable to prevent issues
       fontSize: "14px",
       showPrintMargin: false,
-      readOnly: false
+      readOnly: false,
+      highlightActiveLine: true,
+      animatedScroll: true,
+      behavioursEnabled: true
     });
 
+    // Ensure editor is not read-only
     editor.setReadOnly(false);
-    console.log('Editor created and configured');
+    editor.renderer.setShowGutter(true);
+    editor.focus();
+
+    // Update cursor position
+    editor.on('changeSelection', updateCursorPosition);
+    
+    console.log('Editor initialized - ReadOnly:', editor.getReadOnly());
   }
 
   // Initialize Firebase and Firepad
@@ -141,32 +177,80 @@
       usersRef.off();
     }
     
+    // For non-admins joining, verify session exists first
+    if (!isNew && !currentUser.isAdmin) {
+      const sessionCheck = firebase.database().ref('sessions').child(currentSessionCode);
+      sessionCheck.once('value').then(function(snapshot) {
+        const data = snapshot.val();
+        if (!data || !data.created || !data.createdBy) {
+          console.error('Invalid session - not created by admin');
+          alert('Invalid session code. This session does not exist.');
+          location.reload();
+          return;
+        }
+      });
+    }
+    
     // Create new Firebase references
     const ref = firebase.database().ref('sessions').child(currentSessionCode);
     firepadRef = ref.child('firepad');
     sessionRef = ref;
     usersRef = ref.child('users');
+    
+    // If creating a new session (admin only), mark it as active
+    if (isNew && currentUser.isAdmin) {
+      sessionRef.child('created').set(firebase.database.ServerValue.TIMESTAMP);
+      sessionRef.child('createdBy').set(currentUser.name);
+      console.log('Created new session in Firebase:', currentSessionCode);
+    }
 
     console.log('Creating Firepad instance...');
-    
-    // Create Firepad with minimal options
-    firepad = Firepad.fromACE(firepadRef, editor, {
-      defaultText: isNew ? defaultCode.javascript : '',
-      userId: currentUser.id
+    console.log('User info:', { 
+      id: currentUser.id, 
+      name: currentUser.name, 
+      isAdmin: currentUser.isAdmin 
     });
     
-    // Setup ready handler ONCE
-    firepad.on('ready', function() {
-      if (firepadReady) {
-        console.warn('Firepad ready already triggered, ignoring duplicate');
-        return;
-      }
-      firepadReady = true;
-      
-      console.log('✅ Firepad is ready');
-      
-      // Ensure editor is editable
+    try {
+      // Ensure editor is editable for all users
       editor.setReadOnly(false);
+      
+      // Create Firepad with minimal options
+      const currentLanguage = document.getElementById('language-selector')?.value || 'javascript';
+      firepad = Firepad.fromACE(firepadRef, editor, {
+        defaultText: isNew ? getDefaultCode(currentLanguage) : '',
+        userId: currentUser.id
+      });
+      
+      console.log('✅ Firepad instance created');
+      console.log('Editor read-only status:', editor.getReadOnly());
+      
+      // Setup ready handler ONCE
+      firepad.on('ready', function() {
+        if (firepadReady) {
+          console.warn('Firepad ready already triggered, ignoring duplicate');
+          return;
+        }
+        firepadReady = true;
+        
+        console.log('🟢 Firepad READY! Session', currentSessionCode, 'is active');
+        
+        // Ensure editor stays editable after Firepad initialization
+        if (editor.getReadOnly()) {
+          console.warn('Editor was read-only after Firepad init, fixing...');
+          editor.setReadOnly(false);
+        }
+        
+        // Check if there's existing content
+        const content = editor.getValue();
+        console.log('Session content length:', content.length);
+        console.log('Final editor state - ReadOnly:', editor.getReadOnly());
+        
+        if (!isNew) {
+          // Announce joining for existing session
+          showUserNotification(`You joined session ${currentSessionCode}`, 'join');
+        }
+      });
       
       // Setup presence AFTER Firepad is ready
       setTimeout(() => setupPresenceOnce(), 100);
@@ -176,7 +260,10 @@
       
       // Setup settings sync
       setupSettingsSync();
-    });
+      
+    } catch (error) {
+      console.error('❌ Failed to create Firepad:', error);
+    }
   }
 
   // Setup presence (ONCE)
@@ -199,11 +286,15 @@
 
     // Remove on disconnect
     userRef.onDisconnect().remove();
+    
+    // Monitor for session termination (non-admin users only)
+    monitorSessionTermination();
 
     // Listen for users ONCE
     usersRef.on('value', function(snapshot) {
       const users = snapshot.val() || {};
       updateUsersList(users);
+      detectUserChanges(users);
       updateUserCount(users);
     });
 
@@ -213,7 +304,97 @@
     });
   }
 
-  // Update users list
+  // Detect user joins/leaves
+  let isFirstUserUpdate = true;
+  function detectUserChanges(currentUsers) {
+    // Skip the first update to avoid false notifications
+    if (isFirstUserUpdate) {
+      isFirstUserUpdate = false;
+      previousUsers = {...currentUsers};
+      return;
+    }
+    
+    const currentIds = Object.keys(currentUsers);
+    const previousIds = Object.keys(previousUsers);
+    
+    // Check for new users (only if we had previous users to compare)
+    if (previousIds.length > 0) {
+      currentIds.forEach(userId => {
+        if (!previousIds.includes(userId) && userId !== currentUser.id) {
+          const user = currentUsers[userId];
+          showUserNotification(`${user.name} joined the session`, 'join');
+          playNotificationSound('join');
+        }
+      });
+    }
+    
+    // Check for users who left
+    previousIds.forEach(userId => {
+      if (!currentIds.includes(userId) && userId !== currentUser.id) {
+        const user = previousUsers[userId];
+        if (user) {
+          showUserNotification(`${user.name} left the session`, 'leave');
+          playNotificationSound('leave');
+        }
+      }
+    });
+    
+    previousUsers = {...currentUsers};
+  }
+
+  // Show user notification
+  let notificationQueue = [];
+  let isShowingNotification = false;
+  
+  function showUserNotification(message, type) {
+    // Add to queue
+    notificationQueue.push({ message, type });
+    
+    // Process queue if not already processing
+    if (!isShowingNotification) {
+      processNotificationQueue();
+    }
+  }
+  
+  function processNotificationQueue() {
+    if (notificationQueue.length === 0) {
+      isShowingNotification = false;
+      return;
+    }
+    
+    isShowingNotification = true;
+    const { message, type } = notificationQueue.shift();
+    
+    // Remove any existing notifications
+    const existing = document.querySelector('.user-notification');
+    if (existing) {
+      existing.remove();
+    }
+    
+    const notification = document.createElement('div');
+    notification.className = `user-notification ${type}`;
+    notification.innerHTML = `
+      <span class="icon">${type === 'join' ? '👋' : '👋'}</span>
+      <span>${message}</span>
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.animation = 'fadeOut 0.3s ease';
+      setTimeout(() => {
+        notification.remove();
+        // Process next notification
+        setTimeout(() => processNotificationQueue(), 100);
+      }, 300);
+    }, 2000);
+  }
+
+  // Play notification sound (optional)
+  function playNotificationSound(type) {
+    // You can add sound effects here if desired
+  }
+
+  // Update users list display
   function updateUsersList(users) {
     const usersList = document.getElementById('users-list');
     if (!usersList) return;
@@ -273,6 +454,15 @@
         const language = this.value;
         settingsRef.child('language').set(language);
         changeLanguage(language);
+        
+        // Only load template if editor is empty or has default content
+        const currentContent = editor.getValue().trim();
+        if (!currentContent || currentContent === '// Welcome to Collaborative Code Editor!\n// Start coding here...') {
+          const template = getDefaultCode(language);
+          if (template && editor) {
+            editor.setValue(template, -1);
+          }
+        }
       });
     }
 
@@ -352,6 +542,28 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', hideOutput);
     }
+    
+    // End session button (admin only)
+    const endSessionBtn = document.getElementById('end-session-btn');
+    if (endSessionBtn) {
+      console.log('Setting up End Interview button handler');
+      endSessionBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('End Interview button clicked');
+        if (confirm('Are you sure you want to end this interview? All participants will be disconnected.')) {
+          console.log('User confirmed ending interview');
+          endSession();
+        } else {
+          console.log('User cancelled ending interview');
+        }
+      });
+      
+      // Ensure button is visible and clickable
+      endSessionBtn.style.pointerEvents = 'auto';
+      console.log('End Interview button setup complete');
+    } else {
+      console.error('End Interview button not found in DOM');
+    }
 
     // Cursor position
     if (editor) {
@@ -369,27 +581,111 @@
 
   // Share session
   function shareSession() {
+    const shareMessage = `Join my coding session!\n\nSession Code: ${currentSessionCode}\n\nGo to: ${window.location.origin}\nEnter code: ${currentSessionCode}`;
+    
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(currentSessionCode).then(function() {
-        showNotification(`Session code ${currentSessionCode} copied!`);
+        showNotification(`✓ Session code ${currentSessionCode} copied! Share it with others to collaborate.`);
       });
     } else {
-      prompt('Share this code:', currentSessionCode);
+      prompt('Share this session code with others:', currentSessionCode);
+    }
+  }
+  
+  // End session (admin only)
+  function endSession() {
+    if (!currentUser || !currentUser.isAdmin) {
+      console.error('Only admins can end sessions');
+      return;
+    }
+    
+    console.log('Admin ending session:', currentSessionCode);
+    
+    // Set a termination flag in Firebase
+    if (sessionRef) {
+      sessionRef.child('terminated').set({
+        terminated: true,
+        terminatedBy: currentUser.name,
+        terminatedAt: firebase.database.ServerValue.TIMESTAMP
+      }).then(function() {
+        console.log('Session terminated successfully');
+        
+        // Show termination message to admin
+        alert('Interview ended. All participants have been disconnected.');
+        
+        // Reload the page for the admin immediately
+        location.reload();
+      }).catch(function(error) {
+        console.error('Error terminating session:', error);
+        alert('Failed to end the interview. Please try again.');
+      });
+    } else {
+      console.error('No session reference available');
+      alert('Unable to end session - no active session found');
+    }
+  }
+  
+  // Monitor for session termination
+  function monitorSessionTermination() {
+    if (!sessionRef) return;
+    
+    // Both admin and non-admin should monitor, but respond differently
+    sessionRef.child('terminated').on('value', function(snapshot) {
+      const data = snapshot.val();
+      if (data && data.terminated) {
+        console.log('Session has been terminated');
+        
+        if (!currentUser.isAdmin) {
+          // Non-admin: show termination modal
+          showSessionTerminatedModal();
+        }
+        // Admin will reload via the endSession function
+      }
+    });
+  }
+  
+  // Show session terminated modal
+  function showSessionTerminatedModal() {
+    // Add modal to page if not already present
+    if (!document.getElementById('session-terminated-modal')) {
+      document.body.insertAdjacentHTML('beforeend', terminationModalHTML);
+    }
+    
+    // Show the modal
+    const modal = document.getElementById('session-terminated-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      
+      // Disable the editor
+      if (editor) {
+        editor.setReadOnly(true);
+      }
+      
+      // Disconnect from Firebase
+      if (firepad) {
+        try {
+          firepad.dispose();
+        } catch(e) {
+          console.error('Error disposing Firepad:', e);
+        }
+      }
     }
   }
 
-  // Run code
+  // Run code execution
   async function runCode() {
     const runBtn = document.getElementById('run-btn');
     const language = document.getElementById('language-selector').value;
     const code = editor.getValue();
     const input = document.getElementById('stdin-input').value;
 
+    // Check if language supports execution
     if (!CodeExecutor.isSupported(language)) {
       showOutput(`Language '${language}' does not support execution yet.`, 'error');
       return;
     }
 
+    // Show output panel
     showOutput('Running...', 'info');
     runBtn.disabled = true;
     runBtn.textContent = 'Running...';
@@ -414,7 +710,7 @@
     }
   }
 
-  // Show output
+  // Show output panel
   function showOutput(text, type = 'normal') {
     const outputPanel = document.getElementById('output-panel');
     const outputText = document.getElementById('output-text');
@@ -423,6 +719,7 @@
     outputText.textContent = text;
     outputText.className = type;
 
+    // Show input section for languages that might need it
     const language = document.getElementById('language-selector').value;
     const inputSection = document.getElementById('input-section');
     if (['python', 'java', 'c_cpp', 'javascript'].includes(language)) {
@@ -437,7 +734,7 @@
     outputText.className = '';
   }
 
-  // Hide output
+  // Hide output panel
   function hideOutput() {
     const outputPanel = document.getElementById('output-panel');
     outputPanel.style.display = 'none';
@@ -445,6 +742,7 @@
 
   // Show notification
   function showNotification(message) {
+    // Remove any existing notifications
     const existing = document.querySelector('.notification');
     if (existing) existing.remove();
     
@@ -461,16 +759,19 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       z-index: 10001;
       font-size: 14px;
+      max-width: 400px;
+      animation: slideIn 0.3s ease;
     `;
     notification.textContent = message;
     document.body.appendChild(notification);
 
     setTimeout(() => {
-      notification.remove();
-    }, 3000);
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(() => notification.remove(), 300);
+    }, 4000);
   }
 
-  // Update cursor position
+  // Update cursor position display
   function updateCursorPosition() {
     const position = editor.getCursorPosition();
     const display = document.getElementById('cursor-position');

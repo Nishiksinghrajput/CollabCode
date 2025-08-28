@@ -144,38 +144,130 @@
           </div>
           
           <div id="activeSession" class="active-session" style="display: none;">
-            <h4>Active Session</h4>
+            <h4>Current Session</h4>
             <div class="session-info">
               <p>Session Code: <strong id="activeSessionCode"></strong></p>
               <button id="copyCodeBtn" class="copy-btn">Copy Code</button>
             </div>
           </div>
+          
+          <div class="admin-tools">
+            <button id="viewAllSessionsBtn" class="secondary-btn" style="margin-top: 20px;">
+              📊 View All Active Sessions
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- Sessions Management Modal -->
+    <div id="sessionsModal" class="modal" style="display: none;">
+      <div class="modal-content sessions-modal-content">
+        <div class="modal-header">
+          <h2>Sessions Management</h2>
+          <button id="closeSessionsModalBtn" class="close-modal-btn">×</button>
+        </div>
+        
+        <div class="sessions-stats">
+          <div class="stat-item">
+            <span class="stat-label">Active Sessions:</span>
+            <span id="activeSessionsCount" class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Users:</span>
+            <span id="totalUsersCount" class="stat-value">0</span>
+          </div>
+        </div>
+        
+        <div class="session-tabs">
+          <button id="activeTabBtn" class="tab-btn active">Active Sessions</button>
+          <button id="archivedTabBtn" class="tab-btn">Archived (History)</button>
+        </div>
+        
+        <div class="bulk-actions" id="bulkActionsBar">
+          <button id="selectAllBtn" class="select-all-btn">Select All</button>
+          <button id="endSelectedBtn" class="end-selected-btn" disabled>End Selected</button>
+          <button id="endAllSessionsBtn" class="end-all-btn">End All Sessions</button>
+        </div>
+        
+        <div id="sessionsTableContainer">
+          <table id="sessionsTable" class="sessions-table">
+            <thead>
+              <tr>
+                <th style="width: 40px;">
+                  <input type="checkbox" id="selectAllCheckbox" title="Select All">
+                </th>
+                <th>Session Code</th>
+                <th>Status</th>
+                <th>Candidate</th>
+                <th>All Participants</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sessionsTableBody">
+              <!-- Sessions will be populated here -->
+            </tbody>
+          </table>
+          <div id="noSessionsMessage" class="no-sessions-message" style="display: none;">
+            <p>No active sessions at the moment</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Main Editor Interface -->
     <div id="main-container" style="display: none;">
       <!-- Top Bar -->
       <div id="top-bar">
         <div class="left-controls">
-          <select id="language-selector">
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="c_cpp">C/C++</option>
-            <option value="csharp">C#</option>
-            <option value="php">PHP</option>
-            <option value="ruby">Ruby</option>
-            <option value="go">Go</option>
-            <option value="rust">Rust</option>
-            <option value="typescript">TypeScript</option>
-            <option value="swift">Swift</option>
-            <option value="kotlin">Kotlin</option>
-            <option value="html">HTML</option>
-            <option value="css">CSS</option>
-            <option value="sql">SQL</option>
-            <option value="markdown">Markdown</option>
+          <select id="language-selector" title="Select Language">
+            <optgroup label="Popular">
+              <option value="javascript">🟨 JavaScript</option>
+              <option value="python">🐍 Python</option>
+              <option value="java">☕ Java</option>
+              <option value="typescript">🔵 TypeScript</option>
+              <option value="c_cpp">🔷 C/C++</option>
+            </optgroup>
+            <optgroup label="Systems">
+              <option value="go">🐹 Go</option>
+              <option value="rust">🦀 Rust</option>
+              <option value="csharp">🟦 C#</option>
+              <option value="swift">🍎 Swift</option>
+              <option value="kotlin">🟪 Kotlin</option>
+            </optgroup>
+            <optgroup label="Scripting">
+              <option value="ruby">💎 Ruby</option>
+              <option value="php">🐘 PHP</option>
+              <option value="perl">🐪 Perl</option>
+              <option value="lua">🌙 Lua</option>
+            </optgroup>
+            <optgroup label="Functional">
+              <option value="scala">🔴 Scala</option>
+              <option value="haskell">🎓 Haskell</option>
+              <option value="elixir">💧 Elixir</option>
+            </optgroup>
+            <optgroup label="Data & Stats">
+              <option value="r">📊 R</option>
+              <option value="sql">🗄️ SQL</option>
+            </optgroup>
+            <optgroup label="Mobile">
+              <option value="dart">🎯 Dart</option>
+              <option value="swift">🍎 Swift</option>
+              <option value="kotlin">🟪 Kotlin</option>
+            </optgroup>
+            <optgroup label="Web">
+              <option value="html">🌐 HTML</option>
+              <option value="css">🎨 CSS</option>
+              <option value="javascript">🟨 JavaScript</option>
+              <option value="typescript">🔵 TypeScript</option>
+            </optgroup>
+            <optgroup label="Config">
+              <option value="json">📋 JSON</option>
+              <option value="yaml">📄 YAML</option>
+              <option value="xml">📰 XML</option>
+              <option value="markdown">📝 Markdown</option>
+            </optgroup>
           </select>
           
           <select id="theme-selector">
@@ -200,6 +292,7 @@
 
         <div class="center-info">
           <span id="session-info"></span>
+          <button id="end-session-btn" class="end-session-button" style="margin-left: 15px;">End Interview</button>
           <span id="user-count" class="user-count"></span>
         </div>
 
@@ -238,6 +331,8 @@
       </div>
     </div>
 
+    <!-- Simple Templates (must load before firepad.js) -->
+    <script src="/scripts/simple-templates.js"></script>
     <script src="/scripts/firepad.js"></script>
     <script src="/scripts/app.js"></script>
   </body>

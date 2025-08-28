@@ -374,6 +374,305 @@ html, body {
   font-size: 16px;
 }
 
+/* Sessions Modal */
+.sessions-modal-content {
+  max-width: 900px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #4caf50;
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-modal-btn:hover {
+  color: #f44336;
+}
+
+.sessions-stats {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 25px;
+  padding: 15px;
+  background: #1a1a1a;
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.stat-label {
+  color: #999;
+  font-size: 14px;
+}
+
+.stat-value {
+  color: #4caf50;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+/* Bulk Actions */
+.bulk-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #3a3a3a;
+}
+
+.select-all-btn {
+  background-color: #2196F3;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.select-all-btn:hover {
+  background-color: #1976D2;
+}
+
+.end-selected-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.end-selected-btn:hover:not(:disabled) {
+  background-color: #f57c00;
+}
+
+.end-selected-btn:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.end-all-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.end-all-btn:hover {
+  background-color: #d32f2f;
+}
+
+/* Session checkbox */
+.session-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* Session tabs */
+.session-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #3a3a3a;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: #999;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  color: #ccc;
+}
+
+.tab-btn.active {
+  color: #4caf50;
+  border-bottom-color: #4caf50;
+}
+
+/* Status badges */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background-color: #4caf50;
+  color: white;
+}
+
+.status-in-progress {
+  background-color: #2196F3;
+  color: white;
+}
+
+.status-expired {
+  background-color: #ff9800;
+  color: white;
+}
+
+.status-ended {
+  background-color: #f44336;
+  color: white;
+}
+
+.status-archived {
+  background-color: #666;
+  color: white;
+}
+
+/* Sessions Table */
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.sessions-table thead {
+  background: #1a1a1a;
+}
+
+.sessions-table th {
+  text-align: left;
+  padding: 12px;
+  color: #4caf50;
+  font-weight: 600;
+  border-bottom: 2px solid #3a3a3a;
+}
+
+.sessions-table tbody tr {
+  border-bottom: 1px solid #2a2a2a;
+  transition: background-color 0.2s;
+}
+
+.sessions-table tbody tr:hover {
+  background-color: #1a1a1a;
+}
+
+.sessions-table td {
+  padding: 12px;
+  color: #ccc;
+}
+
+.session-code-cell {
+  font-weight: bold;
+  color: #4caf50;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.participants-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.participant-name {
+  color: #aaa;
+}
+
+.participant-admin {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.session-time {
+  color: #999;
+  font-size: 13px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.join-btn {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.join-btn:hover {
+  background-color: #45a049;
+}
+
+.terminate-btn {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.terminate-btn:hover {
+  background-color: #d32f2f;
+}
+
+.no-sessions-message {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
+}
+
+/* Admin tools section */
+.admin-tools {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #3a3a3a;
+  display: flex;
+  justify-content: center;
+}
+
 .session-info {
   display: flex;
   align-items: center;
@@ -461,6 +760,39 @@ html, body {
   font-size: 14px;
   cursor: pointer;
   transition: border-color 0.3s;
+  min-width: 120px;
+}
+
+#language-selector {
+  min-width: 150px;
+  max-width: 180px;
+}
+
+#template-selector {
+  min-width: 160px;
+  max-width: 200px;
+  margin-left: 5px;
+}
+
+#theme-selector {
+  min-width: 120px;
+}
+
+#fontSize-selector {
+  min-width: 80px;
+}
+
+#top-bar select optgroup {
+  background: #2a2a2a;
+  color: #888;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+#top-bar select option {
+  background: #1e1e1e;
+  color: #cccccc;
+  padding: 2px 4px;
 }
 
 #top-bar select:hover {
@@ -470,6 +802,7 @@ html, body {
 #top-bar select:focus {
   outline: none;
   border-color: #007acc;
+  box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 #share-btn, #run-btn {
@@ -499,6 +832,25 @@ html, body {
 #run-btn:disabled {
   background: #666;
   cursor: not-allowed;
+}
+
+/* End Session Button */
+.end-session-button, #end-session-btn {
+  background-color: #f44336 !important;
+  color: white !important;
+  border: none !important;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.end-session-button:hover, #end-session-btn:hover {
+  background-color: #d32f2f !important;
 }
 
 /* Users List */
