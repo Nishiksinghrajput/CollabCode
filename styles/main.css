@@ -1861,6 +1861,58 @@ a.powered-by-firepad {
   opacity: 1;
 }
 
+/* Slack Integration Styles */
+.slack-share-btn {
+  background: linear-gradient(135deg, #4a154b, #611f69);
+  border: none;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slack-share-btn:hover {
+  background: linear-gradient(135deg, #611f69, #7d2a7f);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.slack-share-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.slack-config-content {
+  padding: 20px;
+}
+
+.slack-webhook-section label {
+  display: block;
+  margin-bottom: 8px;
+  color: #ccc;
+  font-weight: 600;
+}
+
+.slack-preview-section h3 {
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+#slackMessagePreview {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#slackPreviewContent div {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
 #notes-save-status {
   color: #4caf50;
   font-style: italic;

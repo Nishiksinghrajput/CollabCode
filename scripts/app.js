@@ -820,6 +820,11 @@
     const codeElement = document.getElementById('detail-session-code');
     if (codeElement) codeElement.textContent = sessionCode;
     
+    // Initialize Slack integration
+    if (window.initializeSlackIntegration) {
+      window.initializeSlackIntegration(sessionCode, sessionData);
+    }
+    
     // Load notes
     if (window.firebase) {
       window.firebase.database()
