@@ -1192,7 +1192,7 @@ a.powered-by-firepad {
 
 /* Atom Landing Page Styles */
 .atom-landing {
-  background: linear-gradient(135deg, #FF5722 0%, #FF7043 100%);
+  background: linear-gradient(135deg, #018ef5 0%, #0062aa 100%);
   overflow: hidden;
 }
 
@@ -1210,9 +1210,9 @@ a.powered-by-firepad {
   position: absolute;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle at 20% 80%, rgba(255, 87, 34, 0.3) 0%, transparent 50%),
-              radial-gradient(circle at 80% 20%, rgba(255, 193, 7, 0.2) 0%, transparent 50%),
-              radial-gradient(circle at 40% 40%, rgba(255, 112, 67, 0.2) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 80%, rgba(1, 142, 245, 0.3) 0%, transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(0, 98, 170, 0.2) 0%, transparent 50%),
+              radial-gradient(circle at 40% 40%, rgba(79, 195, 247, 0.2) 0%, transparent 50%);
   animation: gradientShift 20s ease infinite;
 }
 
@@ -1248,7 +1248,7 @@ a.powered-by-firepad {
 .shape-2 {
   width: 200px;
   height: 200px;
-  background: linear-gradient(135deg, #FFD54F 0%, rgba(255, 213, 79, 0.5) 100%);
+  background: linear-gradient(135deg, #4FC3F7 0%, rgba(79, 195, 247, 0.5) 100%);
   top: 60%;
   right: 10%;
   animation-delay: 5s;
@@ -1266,7 +1266,7 @@ a.powered-by-firepad {
 .shape-4 {
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, #FFAB40 0%, rgba(255, 171, 64, 0.5) 100%);
+  background: linear-gradient(135deg, #29B6F6 0%, rgba(41, 182, 246, 0.5) 100%);
   top: 30%;
   right: 30%;
   animation-delay: 15s;
@@ -1323,7 +1323,7 @@ a.powered-by-firepad {
 }
 
 .atom-title {
-  color: #FF5722;
+  color: #018ef5;
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 10px;
@@ -1352,9 +1352,9 @@ a.powered-by-firepad {
 
 .atom-role-card:hover {
   background: #FFF;
-  border-color: #FF5722;
+  border-color: #018ef5;
   transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(255, 87, 34, 0.15);
+  box-shadow: 0 15px 40px rgba(1, 142, 245, 0.15);
 }
 
 .atom-role-card h3 {
@@ -1399,28 +1399,28 @@ a.powered-by-firepad {
 }
 
 .atom-btn-primary {
-  background: linear-gradient(135deg, #FF5722 0%, #FF7043 100%);
+  background: linear-gradient(135deg, #018ef5 0%, #0062aa 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(255, 87, 34, 0.3);
+  box-shadow: 0 4px 15px rgba(1, 142, 245, 0.3);
 }
 
 .atom-btn-primary:hover {
-  background: linear-gradient(135deg, #F4511E 0%, #FF5722 100%);
+  background: linear-gradient(135deg, #01538f 0%, #018ef5 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 87, 34, 0.4);
+  box-shadow: 0 6px 20px rgba(1, 142, 245, 0.4);
 }
 
 .atom-btn-secondary {
   background: #FFF;
-  color: #FF5722;
-  border: 2px solid #FF5722;
+  color: #018ef5;
+  border: 2px solid #018ef5;
 }
 
 .atom-btn-secondary:hover {
-  background: #FF5722;
+  background: #018ef5;
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 87, 34, 0.3);
+  box-shadow: 0 6px 20px rgba(1, 142, 245, 0.3);
 }
 
 .atom-btn svg {
@@ -1482,7 +1482,7 @@ a.powered-by-firepad {
 }
 
 .feature-item:hover {
-  color: #FF5722;
+  color: #018ef5;
 }
 
 .feature-item svg {

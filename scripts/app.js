@@ -10,7 +10,7 @@
   // Setup landing page
   function setupLandingPage() {
     // Candidate button - support both old and new classes
-    const candidateBtn = document.querySelector('.candidate-btn, .atom-btn-secondary');
+    const candidateBtn = document.querySelector('#candidateCard .role-btn');
     if (candidateBtn) {
       candidateBtn.addEventListener('click', function() {
         document.getElementById('landingModal').style.display = 'none';
@@ -19,10 +19,10 @@
     }
 
     // Admin button - support both old and new classes  
-    const adminBtn = document.querySelector('.admin-btn, .atom-btn-primary');
+    const adminBtn = document.querySelector('#adminCard .role-btn');
     if (adminBtn) {
       adminBtn.addEventListener('click', function() {
-        document.getElementById('landingModal').style.display = 'none');
+        document.getElementById('landingModal').style.display = 'none';
         document.getElementById('adminLoginModal').style.display = 'flex';
       });
     }
@@ -421,7 +421,7 @@
   let sessionsListener = null;
   
   // Load all active sessions for admin
-  function loadActiveSessions(showArchived = false) {
+  function loadActiveSessions(isArchived = false) {
     const sessionsTableBody = document.getElementById('sessionsTableBody');
     const noSessionsMessage = document.getElementById('noSessionsMessage');
     const sessionsTable = document.getElementById('sessionsTable');
@@ -599,7 +599,7 @@
         
         row.innerHTML = `
           <td>
-            ${showArchived ? '' : '<input type="checkbox" class="session-checkbox" data-code="' + session.code + '">'}
+            ${isArchived ? '' : '<input type="checkbox" class="session-checkbox" data-code="' + session.code + '">'}
           </td>
           <td class="session-code-cell">${session.code}</td>
           <td>${statusBadge}</td>
@@ -616,7 +616,7 @@
           <td class="session-time">${createdTime}</td>
           <td>
             <div class="action-buttons">
-              ${showArchived ? 
+              ${isArchived ? 
                 '<span style="color: #666;">Archived</span>' : 
                 `<button class="join-btn" data-code="${session.code}" ${session.isExpired ? 'disabled' : ''}>Join</button>
                  <button class="terminate-btn" data-code="${session.code}">End</button>`
