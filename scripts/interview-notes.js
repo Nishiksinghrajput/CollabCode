@@ -211,6 +211,12 @@
       .update(notesData)
       .then(() => {
         updateSaveStatus(isManual ? 'Saved!' : 'Auto-saved');
+        
+        // Show success notification for manual saves
+        if (isManual) {
+          showSaveSuccessNotification();
+        }
+        
         setTimeout(() => updateSaveStatus(''), 3000);
         
         // Track in PostHog
@@ -282,6 +288,64 @@
     if (statusElement) {
       statusElement.textContent = status;
     }
+  }
+  
+  // Show prominent success notification
+  function showSaveSuccessNotification() {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" fill="#4caf50"/>
+          <path d="M8 12.5L10.5 15L16 9.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+          <strong>Interview Notes Saved!</strong>
+          <div style="font-size: 12px; opacity: 0.9;">Your feedback has been successfully saved.</div>
+        </div>
+      </div>
+    `;
+    
+    // Style the notification
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      z-index: 100000;
+      animation: slideIn 0.3s ease-out;
+    `;
+    
+    // Add animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(400px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(400px); opacity: 0; }
+      }
+    `;
+    if (!document.querySelector('style[data-notification-animations]')) {
+      style.setAttribute('data-notification-animations', 'true');
+      document.head.appendChild(style);
+    }
+    
+    // Add to DOM
+    document.body.appendChild(notification);
+    
+    // Remove after animation
+    setTimeout(() => {
+      notification.style.animation = 'slideOut 0.3s ease-in';
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
   }
 
   // View notes in read-only mode (for admin dashboard)

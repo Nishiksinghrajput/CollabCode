@@ -608,17 +608,32 @@
     
     console.log('Admin ending session:', currentSessionCode);
     
-    // Set a termination flag in Firebase
+    // Save the final code before ending the session
+    const finalCode = editor ? editor.getValue() : '';
+    const language = document.getElementById('language-selector')?.value || 'javascript';
+    
+    // Set a termination flag and save code in Firebase
     if (sessionRef) {
-      sessionRef.child('terminated').set({
-        terminated: true,
-        terminatedBy: currentUser.name,
-        terminatedAt: firebase.database.ServerValue.TIMESTAMP
+      // Save the code separately first
+      sessionRef.child('finalCode').set({
+        content: finalCode,
+        language: language,
+        savedAt: firebase.database.ServerValue.TIMESTAMP,
+        lineCount: finalCode.split('\n').length,
+        characterCount: finalCode.length,
+        savedBy: currentUser.name
+      }).then(() => {
+        // Then set the termination flag
+        return sessionRef.child('terminated').set({
+          terminated: true,
+          terminatedBy: currentUser.name,
+          terminatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
       }).then(function() {
-        console.log('Session terminated successfully');
+        console.log('Session terminated successfully with code saved');
         
         // Show termination message to admin
-        alert('Interview ended. All participants have been disconnected.');
+        alert('Interview ended. Code has been saved. All participants have been disconnected.');
         
         // Reload the page for the admin immediately
         location.reload();
