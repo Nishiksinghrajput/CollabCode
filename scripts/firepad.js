@@ -291,6 +291,11 @@
     
     // Monitor for session termination (non-admin users only)
     monitorSessionTermination();
+    
+    // Initialize interview notes system (for admins only)
+    if (window.initializeInterviewNotes) {
+      window.initializeInterviewNotes(currentSessionCode, currentUser);
+    }
 
     // Listen for users ONCE
     usersRef.on('value', function(snapshot) {

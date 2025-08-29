@@ -45,6 +45,16 @@
     <script src="/scripts/code-executor.js"></script>
     <!-- Authentication -->
     <script src="/scripts/auth-api.js"></script>
+    
+    <!-- PostHog Analytics -->
+    <script>
+      !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init Ce Os As Te Cs Fs capture Ye calculateEventProperties Ls register register_once register_for_session unregister unregister_for_session qs getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty zs js createPersonProfile Us Rs Bs opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing Ds debug L Ns getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+      posthog.init('phc_Nz61YnBO6SZ9EHkBBVwQnF8enDKn7u771iokFEuNAZ2', {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2025-05-24',
+        person_profiles: 'identified_only' // Only create profiles for logged-in users
+      });
+    </script>
   </head>
   <body>
     <!-- Landing Modal -->
@@ -235,6 +245,60 @@
       </div>
     </div>
 
+    <!-- Session Details Modal -->
+    <div id="sessionDetailsModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+          <h2>Session Details</h2>
+          <button id="closeSessionDetailsBtn" class="close-modal-btn">×</button>
+        </div>
+        
+        <div id="sessionDetailsContent">
+          <div class="session-detail-header">
+            <h3>Session: <span id="detail-session-code"></span></h3>
+            <div class="detail-recommendation" id="detail-recommendation"></div>
+          </div>
+          
+          <div class="session-detail-tabs">
+            <button class="detail-tab active" data-tab="notes">📝 Notes</button>
+            <button class="detail-tab" data-tab="code">💻 Code</button>
+            <button class="detail-tab" data-tab="info">ℹ️ Info</button>
+          </div>
+          
+          <div class="tab-content" id="notes-tab" style="display: block;">
+            <div class="notes-display">
+              <div class="notes-display-rating">
+                <strong>Rating:</strong> <span id="display-rating"></span>
+              </div>
+              <div class="notes-display-tags">
+                <strong>Tags:</strong> <span id="display-tags"></span>
+              </div>
+              <div class="notes-display-content">
+                <strong>Notes:</strong>
+                <div id="display-notes-content"></div>
+              </div>
+              <div class="notes-display-meta">
+                <small>Last updated: <span id="display-updated"></span> by <span id="display-author"></span></small>
+              </div>
+            </div>
+          </div>
+          
+          <div class="tab-content" id="code-tab" style="display: none;">
+            <div id="session-code-viewer" style="height: 400px; border: 1px solid #444;"></div>
+          </div>
+          
+          <div class="tab-content" id="info-tab" style="display: none;">
+            <div class="session-info-display">
+              <p><strong>Created:</strong> <span id="display-created"></span></p>
+              <p><strong>Duration:</strong> <span id="display-duration"></span></p>
+              <p><strong>Participants:</strong> <span id="display-participants"></span></p>
+              <p><strong>Status:</strong> <span id="display-status"></span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <!-- Sessions Management Modal -->
     <div id="sessionsModal" class="modal" style="display: none;">
       <div class="modal-content sessions-modal-content">
@@ -373,6 +437,7 @@
 
         <div class="right-controls">
           <div id="users-list"></div>
+          <button id="notes-toggle-btn" class="notes-button" style="display: none;">📝 Notes</button>
           <button id="run-btn" class="run-button">▶ Run</button>
           <button id="share-btn">Share</button>
         </div>
@@ -382,6 +447,60 @@
       <div id="editor-wrapper">
         <div id="split-container">
           <div id="firepad-container"></div>
+          
+          <!-- Interviewer Notes Panel -->
+          <div id="notes-panel" style="display: none;">
+            <div id="notes-header">
+              <span>📝 Interview Notes</span>
+              <span id="notes-save-status" style="font-size: 12px; color: #888; margin-left: 10px;"></span>
+              <button id="close-notes">×</button>
+            </div>
+            <div id="notes-content">
+              <div class="notes-rating-section">
+                <label>Quick Rating:</label>
+                <div class="rating-stars" id="rating-stars">
+                  <span data-rating="1">☆</span>
+                  <span data-rating="2">☆</span>
+                  <span data-rating="3">☆</span>
+                  <span data-rating="4">☆</span>
+                  <span data-rating="5">☆</span>
+                </div>
+              </div>
+              
+              <div class="notes-tags-section">
+                <label>Quick Tags:</label>
+                <div class="quick-tags">
+                  <button class="tag-btn" data-tag="strong-fundamentals">Strong Fundamentals</button>
+                  <button class="tag-btn" data-tag="good-communication">Good Communication</button>
+                  <button class="tag-btn" data-tag="needs-practice">Needs Practice</button>
+                  <button class="tag-btn" data-tag="problem-solver">Problem Solver</button>
+                  <button class="tag-btn" data-tag="asks-good-questions">Asks Good Questions</button>
+                </div>
+              </div>
+              
+              <div class="notes-text-section">
+                <label>Notes:</label>
+                <textarea id="interview-notes-text" placeholder="Add your observations about the candidate..."></textarea>
+              </div>
+              
+              <div class="notes-recommendation-section">
+                <label>Recommendation:</label>
+                <select id="notes-recommendation">
+                  <option value="">Select...</option>
+                  <option value="STRONG_HIRE">Strong Hire</option>
+                  <option value="HIRE">Hire</option>
+                  <option value="PROCEED_TO_NEXT_ROUND">Proceed to Next Round</option>
+                  <option value="MAYBE">Maybe</option>
+                  <option value="NO_HIRE">No Hire</option>
+                </select>
+              </div>
+              
+              <div class="notes-actions">
+                <button id="save-notes-btn" class="save-notes-btn">Save Notes</button>
+              </div>
+            </div>
+          </div>
+          
           <div id="output-panel" style="display: none;">
             <div id="output-header">
               <span>Output</span>
@@ -432,9 +551,10 @@
     </div>
 
     <!-- Simple Templates (must load before firepad.js) -->
-    <script src="/scripts/simple-templates.js"></script>
-    <script src="/scripts/custom-dialogs.js"></script>
-    <script src="/scripts/firepad.js"></script>
-    <script src="/scripts/app.js"></script>
+    <script src="/scripts/simple-templates.js?v=2"></script>
+    <script src="/scripts/custom-dialogs.js?v=2"></script>
+    <script src="/scripts/firepad.js?v=2"></script>
+    <script src="/scripts/interview-notes.js?v=2"></script>
+    <script src="/scripts/app.js?v=2"></script>
   </body>
 </html>
