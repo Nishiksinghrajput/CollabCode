@@ -76,6 +76,12 @@
         
         Auth.joinAsCandidate(name);
         window.location.hash = sessionCode;
+        
+        // Initialize PostHog tracking for candidate
+        if (window.SessionTracking) {
+          window.SessionTracking.initialize(sessionCode, 'candidate', name);
+        }
+        
         startSession(name, sessionCode, false);
       }
     });
@@ -231,6 +237,11 @@
       window.location.hash = sessionCode;
       console.log('CREATE SESSION: Current URL hash:', window.location.hash);
       
+      // Track interviewer creating and joining session with PostHog
+      if (window.initializeSessionTracking) {
+        window.initializeSessionTracking(sessionCode, 'interviewer', 'Interviewer');
+      }
+      
       // Start session - DON'T set sessionStarting here, let startSession handle it
       startSession('Interviewer', sessionCode, true);
     });
@@ -240,6 +251,11 @@
       const sessionCode = adminSessionCode.value.trim();
       
       if (sessionCode.length === 6) {
+        // Track interviewer joining session with PostHog
+        if (window.initializeSessionTracking) {
+          window.initializeSessionTracking(sessionCode, 'interviewer', 'Interviewer');
+        }
+        
         window.location.hash = sessionCode;
         startSession('Interviewer', sessionCode, false);
       }
@@ -355,48 +371,98 @@
       });
     }
     
-    // End Selected button
+    // End/Delete Selected button (behavior depends on active tab)
     if (endSelectedBtn) {
       endSelectedBtn.addEventListener('click', function() {
         const selected = document.querySelectorAll('.session-checkbox:checked');
-        console.log('End Selected clicked, found checkboxes:', selected.length);
+        const archivedTabBtn = document.getElementById('archivedTabBtn');
+        const isArchivedTab = archivedTabBtn && archivedTabBtn.classList.contains('active');
+        
+        console.log('End/Delete Selected clicked, found checkboxes:', selected.length);
+        console.log('Is archived tab:', isArchivedTab);
         
         const sessionCodes = Array.from(selected).map(cb => cb.getAttribute('data-code'));
-        console.log('Session codes to terminate:', sessionCodes);
+        console.log('Session codes to process:', sessionCodes);
         
         if (sessionCodes.length === 0) {
           console.log('No sessions selected');
           return;
         }
         
-        const message = sessionCodes.length === 1 
-          ? `End session ${sessionCodes[0]}?`
-          : `End ${sessionCodes.length} selected sessions?`;
-          
-        if (confirm(message + ' All participants will be disconnected.')) {
-          console.log('User confirmed, terminating sessions...');
-          sessionCodes.forEach(code => {
-            console.log('Terminating:', code);
-            terminateSessionFromDashboard(code);
-          });
+        if (isArchivedTab) {
+          // In Ended Sessions tab - DELETE permanently
+          const message = sessionCodes.length === 1 
+            ? `⚠️ PERMANENTLY DELETE session ${sessionCodes[0]}?`
+            : `⚠️ PERMANENTLY DELETE ${sessionCodes.length} selected sessions?`;
+            
+          if (confirm(message + '\n\nThis will remove all data forever and CANNOT be undone!')) {
+            if (confirm('FINAL CONFIRMATION: Delete these sessions forever?')) {
+              console.log('User confirmed, DELETING sessions...', sessionCodes);
+              
+              // Delete sessions with staggered timing to ensure Firebase handles them properly
+              sessionCodes.forEach((code, index) => {
+                setTimeout(() => {
+                  console.log(`Deleting session ${index + 1}/${sessionCodes.length}: ${code}`);
+                  deleteSession(code);
+                }, index * 200); // Stagger by 200ms
+              });
+              
+              showNotification(`Deleting ${sessionCodes.length} session(s)...`);
+            }
+          }
         } else {
-          console.log('User cancelled termination');
+          // In Active tab - just end/terminate sessions
+          const message = sessionCodes.length === 1 
+            ? `End session ${sessionCodes[0]}?`
+            : `End ${sessionCodes.length} selected sessions?`;
+            
+          if (confirm(message + ' All participants will be disconnected.')) {
+            console.log('User confirmed, ending sessions...');
+            sessionCodes.forEach(code => {
+              console.log('Ending:', code);
+              terminateSessionFromDashboard(code);
+            });
+          }
         }
       });
     }
     
-    // End All Sessions button
+    // End All / Delete All button (behavior depends on active tab)
     if (endAllSessionsBtn) {
       endAllSessionsBtn.addEventListener('click', function() {
         const checkboxes = document.querySelectorAll('.session-checkbox');
+        const archivedTabBtn = document.getElementById('archivedTabBtn');
+        const isArchivedTab = archivedTabBtn && archivedTabBtn.classList.contains('active');
+        
         if (checkboxes.length === 0) {
-          alert('No active sessions to end.');
+          alert(isArchivedTab ? 'No ended sessions to delete' : 'No active sessions to end');
           return;
         }
         
-        if (confirm(`End ALL ${checkboxes.length} active sessions? This will disconnect all participants.`)) {
-          const sessionCodes = Array.from(checkboxes).map(cb => cb.getAttribute('data-code'));
-          sessionCodes.forEach(code => terminateSessionFromDashboard(code));
+        if (isArchivedTab) {
+          // In Ended Sessions tab - DELETE ALL permanently
+          if (confirm(`⚠️ PERMANENTLY DELETE ALL ${checkboxes.length} ended sessions?\n\nThis will remove all data forever!`)) {
+            if (confirm('FINAL CONFIRMATION: Delete ALL ended sessions forever? This CANNOT be undone!')) {
+              const sessionCodes = Array.from(checkboxes).map(cb => cb.getAttribute('data-code'));
+              console.log('Mass deleting sessions:', sessionCodes);
+              
+              // Delete all sessions sequentially to ensure they complete
+              sessionCodes.forEach((code, index) => {
+                setTimeout(() => {
+                  console.log(`Deleting session ${index + 1}/${sessionCodes.length}: ${code}`);
+                  deleteSession(code);
+                }, index * 200); // Stagger deletions by 200ms to avoid overwhelming Firebase
+              });
+              
+              showNotification(`Deleting ${sessionCodes.length} sessions...`);
+            }
+          }
+        } else {
+          // In Active tab - end all sessions
+          if (confirm(`End ALL ${checkboxes.length} active sessions? This will disconnect all participants.`)) {
+            const sessionCodes = Array.from(checkboxes).map(cb => cb.getAttribute('data-code'));
+            sessionCodes.forEach(code => terminateSessionFromDashboard(code));
+          }
         }
       });
     }
@@ -739,6 +805,11 @@
     if (!window.firebase || !window.firebase.database) {
       alert('Database connection not ready');
       return;
+    }
+    
+    // Track session end with PostHog
+    if (window.trackSessionEnd) {
+      window.trackSessionEnd('admin_ended');
     }
     
     // Still use 'terminated' in Firebase for backward compatibility, but it means "ended"
