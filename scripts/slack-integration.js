@@ -35,6 +35,24 @@
       return;
     }
     
+    // Hide the session details modal temporarily
+    const sessionDetailsModal = document.getElementById('sessionDetailsModal');
+    if (sessionDetailsModal) {
+      sessionDetailsModal.style.display = 'none';
+    }
+    
+    // Ensure the modal is on top and visible
+    modal.style.zIndex = '10000';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    
     // Load saved webhook URL
     const savedWebhook = localStorage.getItem('slackWebhookUrl');
     const webhookInput = document.getElementById('slackWebhookUrl');
@@ -44,9 +62,6 @@
     
     // Generate preview
     updateSlackPreview();
-    
-    // Show modal
-    modal.style.display = 'flex';
     
     // Setup event handlers
     setupSlackModalHandlers();
@@ -251,6 +266,11 @@
       if (response.ok) {
         showNotification('Successfully shared to Slack!', false);
         closeSlackModal();
+        
+        // Track Slack share with PostHog
+        if (window.trackSlackShare) {
+          window.trackSlackShare(currentSessionCode, true);
+        }
       } else {
         throw new Error('Failed to send to Slack');
       }
@@ -270,6 +290,12 @@
     const modal = document.getElementById('slackConfigModal');
     if (modal) {
       modal.style.display = 'none';
+    }
+    
+    // Restore the session details modal
+    const sessionDetailsModal = document.getElementById('sessionDetailsModal');
+    if (sessionDetailsModal) {
+      sessionDetailsModal.style.display = 'flex';
     }
   }
   
