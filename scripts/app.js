@@ -473,14 +473,6 @@
     // Double check Firebase database ref is accessible
     try {
       const testRef = window.firebase.database().ref();
-      console.log('Firebase database reference is accessible');
-      
-      // Try to fetch session 689861 specifically for debugging
-      window.firebase.database().ref('sessions/689861').once('value').then(snapshot => {
-        console.log('Direct fetch of session 689861:', snapshot.val());
-      }).catch(err => {
-        console.error('Error fetching session 689861:', err);
-      });
     } catch (error) {
       console.error('Firebase database error:', error);
       sessionsTableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Database connection error. Please refresh the page.</td></tr>';
@@ -496,8 +488,6 @@
     // Create the listener function
     sessionsListener = function(snapshot) {
       const sessions = snapshot.val() || {};
-      console.log('Fetched sessions from Firebase:', sessions);
-      console.log('Looking for session 689861:', sessions['689861']);
       sessionsTableBody.innerHTML = '';
       
       const activeSessions = [];
@@ -525,12 +515,10 @@
         
         // Terminated sessions go to archived
         if (session.terminated && session.terminated.terminated) {
-          console.log('Session', code, 'is terminated, adding to archived');
           archivedSessions.push(sessionInfo);
         }
         // Archive sessions older than 2 hours
         else if (sessionAge > twoHours) {
-          console.log('Session', code, 'is expired (>2hrs), adding to archived');
           archivedSessions.push(sessionInfo);
           // Auto-mark as archived in Firebase
           if (!session.archived) {
@@ -541,7 +529,6 @@
             });
           }
         } else {
-          console.log('Session', code, 'is active');
           activeSessions.push(sessionInfo);
           totalUsers += userCount;
         }
@@ -556,11 +543,6 @@
       // Choose which sessions to display based on active tab
       const isShowingArchived = archivedTabBtn && archivedTabBtn.classList.contains('active');
       const sessionsToDisplay = isShowingArchived ? archivedSessions : activeSessions;
-      
-      console.log('Active sessions count:', activeSessions.length);
-      console.log('Archived sessions count:', archivedSessions.length);
-      console.log('Showing archived tab?', isShowingArchived);
-      console.log('Sessions to display:', sessionsToDisplay);
       
       if (sessionsToDisplay.length === 0) {
         sessionsTable.style.display = 'none';

@@ -1,8 +1,11 @@
 {
   "rules": {
     "sessions": {
+      // Allow reading the entire sessions list
+      ".read": true,
+      
       "$sessionId": {
-        // Anyone can read sessions (needed for candidates to join)
+        // Anyone can read individual sessions (needed for candidates to join)
         ".read": true,
         
         // Session creation and modification rules
