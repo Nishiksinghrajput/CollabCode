@@ -53,13 +53,6 @@
     modal.style.alignItems = 'center';
     modal.style.justifyContent = 'center';
     
-    // Load saved webhook URL
-    const savedWebhook = localStorage.getItem('slackWebhookUrl');
-    const webhookInput = document.getElementById('slackWebhookUrl');
-    if (webhookInput && savedWebhook) {
-      webhookInput.value = savedWebhook;
-    }
-    
     // Generate preview
     updateSlackPreview();
     
@@ -94,12 +87,7 @@
       newSendBtn.addEventListener('click', sendToSlack);
     }
     
-    // Update preview on webhook change
-    if (webhookInput) {
-      webhookInput.addEventListener('input', function() {
-        localStorage.setItem('slackWebhookUrl', this.value);
-      });
-    }
+    // No need to handle webhook input anymore - it's configured server-side
   }
   
   // Update Slack message preview
@@ -226,19 +214,6 @@
   
   // Send to Slack
   async function sendToSlack() {
-    const webhookUrl = document.getElementById('slackWebhookUrl').value;
-    
-    if (!webhookUrl) {
-      alert('Please enter a Slack webhook URL');
-      return;
-    }
-    
-    // Validate webhook URL
-    if (!webhookUrl.startsWith('https://hooks.slack.com/')) {
-      alert('Invalid webhook URL. It should start with https://hooks.slack.com/');
-      return;
-    }
-    
     const sendBtn = document.getElementById('sendToSlack');
     if (sendBtn) {
       sendBtn.disabled = true;
@@ -254,13 +229,16 @@
       const notes = snapshot.val();
       const message = formatSlackMessage(notes);
       
-      // Send to Slack via webhook
-      const response = await fetch(webhookUrl, {
+      // Send to Slack via our secure API endpoint
+      // NOTE: Webhook URL is configured server-side as environment variable
+      const response = await fetch('/api/slack/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(message.payload)
+        body: JSON.stringify({
+          payload: message.payload
+        })
       });
       
       if (response.ok) {
@@ -272,7 +250,9 @@
           window.trackSlackShare(currentSessionCode, true);
         }
       } else {
-        throw new Error('Failed to send to Slack');
+        const errorData = await response.json();
+        console.error('Slack send failed:', errorData);
+        throw new Error(errorData.error || 'Failed to send to Slack');
       }
     } catch (error) {
       console.error('Error sending to Slack:', error);

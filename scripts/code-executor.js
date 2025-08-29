@@ -1,8 +1,8 @@
 // Code Execution Module
 const CodeExecutor = (function() {
   
-  // Piston API endpoint (free, no auth required)
-  const PISTON_API = 'https://emkc.org/api/v2/piston';
+  // Use our secure API proxy instead of calling external APIs directly
+  // This provides security, rate limiting, and hides external endpoints
   
   // Language mappings for Piston
   const languageMap = {
@@ -21,15 +21,10 @@ const CodeExecutor = (function() {
     sql: { language: 'sqlite3', version: '3.36.0' }
   };
 
-  // Get available runtimes
+  // Get available runtimes (not used currently, but kept for future use)
   async function getRuntimes() {
-    try {
-      const response = await fetch(`${PISTON_API}/runtimes`);
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch runtimes:', error);
-      return [];
-    }
+    // Runtimes are handled server-side now
+    return [];
   }
 
   // Execute code
@@ -45,52 +40,35 @@ const CodeExecutor = (function() {
     }
 
     try {
-      const response = await fetch(`${PISTON_API}/execute`, {
+      // Use our secure API proxy instead of calling Piston directly
+      const response = await fetch('/api/code/execute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          language: langConfig.language,
-          version: langConfig.version,
-          files: [
-            {
-              name: `main.${getFileExtension(language)}`,
-              content: code
-            }
-          ],
-          stdin: input,
-          args: [],
-          compile_timeout: 10000,
-          run_timeout: 10000,
-          compile_memory_limit: -1,
-          run_memory_limit: -1
+          language: language,
+          code: code,
+          stdin: input
         })
       });
 
       const result = await response.json();
       
-      if (result.run) {
+      if (result.success) {
         return {
           success: true,
-          output: result.run.output || '',
-          error: result.run.stderr || '',
-          exitCode: result.run.code,
-          executionTime: result.run.time || 0
-        };
-      } else if (result.compile && result.compile.stderr) {
-        return {
-          success: false,
-          output: '',
-          error: result.compile.stderr,
-          exitCode: result.compile.code
+          output: result.output || result.stdout || '',
+          error: result.stderr || '',
+          exitCode: result.code || 0,
+          executionTime: 0
         };
       } else {
         return {
           success: false,
           output: '',
-          error: 'Execution failed',
-          exitCode: -1
+          error: result.error || result.details || 'Execution failed',
+          exitCode: result.code || -1
         };
       }
     } catch (error) {

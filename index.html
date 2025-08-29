@@ -42,7 +42,7 @@
     <!-- Firepad -->
     <script src="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.min.js"></script>
     <!-- Code Executor -->
-    <script src="/scripts/code-executor.js"></script>
+    <script src="/scripts/code-executor.js?v=2"></script>
     <!-- Authentication -->
     <script src="/scripts/auth-api.js"></script>
     
@@ -254,10 +254,11 @@
         </div>
         
         <div class="slack-config-content">
-          <div class="slack-webhook-section">
-            <label for="slackWebhookUrl">Slack Webhook URL:</label>
-            <input type="url" id="slackWebhookUrl" placeholder="https://hooks.slack.com/services/..." style="width: 100%; padding: 8px; margin: 10px 0; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 4px;">
-            <small style="color: #888;">Your webhook URL is stored locally and never sent to our servers.</small>
+          <div class="slack-info-section" style="padding: 10px; background: #2a2a2a; border-radius: 4px; margin-bottom: 20px;">
+            <p style="color: #888; margin: 0;">
+              <strong>📌 Note:</strong> Slack integration is configured server-side for security.
+              Contact your administrator if notifications are not working.
+            </p>
           </div>
           
           <div class="slack-preview-section" style="margin-top: 20px;">
@@ -595,7 +596,7 @@
     <script src="/scripts/custom-dialogs.js?v=2"></script>
     <script src="/scripts/firepad.js?v=2"></script>
     <script src="/scripts/interview-notes.js?v=2"></script>
-    <script src="/scripts/slack-integration.js?v=2"></script>
+    <script src="/scripts/slack-integration.js?v=4"></script>
     <script src="/scripts/posthog-tracking.js?v=2"></script>
     <script src="/scripts/app.js?v=2"></script>
   </body>
