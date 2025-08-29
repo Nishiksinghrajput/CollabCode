@@ -1165,13 +1165,16 @@
     document.getElementById('main-container').style.display = 'flex';
 
     // Initialize the editor session
-    if (typeof initializeSession === 'function') {
-      initializeSession({
+    if (typeof window.initializeSession === 'function') {
+      console.log('Calling initializeSession for Firepad editor');
+      window.initializeSession({
         userName: userName,
         sessionCode: sessionCode,
         isNew: isNew,
         isAdmin: Auth.isAdmin()
       });
+    } else {
+      console.error('initializeSession function not found! Firepad may not be loaded.');
     }
     
     // Reset flag after a delay to allow future navigation
