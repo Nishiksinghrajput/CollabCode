@@ -445,6 +445,11 @@
         this.classList.add('active');
         archivedTabBtn.classList.remove('active');
         bulkActionsBar.style.display = 'flex';
+        // Update bulk action buttons for active sessions
+        const endSelectedBtn = document.getElementById('endSelectedBtn');
+        const deleteAllBtn = document.getElementById('endAllSessionsBtn');
+        if (endSelectedBtn) endSelectedBtn.textContent = 'End Selected';
+        if (deleteAllBtn) deleteAllBtn.textContent = 'End All Sessions';
         loadActiveSessions();
       });
     }
@@ -454,7 +459,18 @@
       archivedTabBtn.addEventListener('click', function() {
         this.classList.add('active');
         activeTabBtn.classList.remove('active');
-        bulkActionsBar.style.display = 'none';
+        bulkActionsBar.style.display = 'flex'; // Show bulk actions for archived too
+        // Update bulk action buttons for archived sessions (delete instead of end)
+        const endSelectedBtn = document.getElementById('endSelectedBtn');
+        const deleteAllBtn = document.getElementById('endAllSessionsBtn');
+        if (endSelectedBtn) {
+          endSelectedBtn.textContent = 'Delete Selected';
+          endSelectedBtn.style.background = '#f44336';
+        }
+        if (deleteAllBtn) {
+          deleteAllBtn.textContent = 'Delete All Archived';
+          deleteAllBtn.style.background = '#f44336';
+        }
         loadActiveSessions(true); // Load archived
       });
     }
@@ -560,6 +576,9 @@
       sessionsToDisplay.forEach(session => {
         const row = document.createElement('tr');
         
+        // Get the full session data to access notes
+        const fullSession = sessions[session.code];
+        
         // Separate candidates and interviewers
         const users = Object.values(session.users);
         const candidates = users.filter(user => 
@@ -569,10 +588,31 @@
           user.name && user.name.toLowerCase().includes('interviewer')
         );
         
-        // Format candidate names (primary focus)
+        // Get hire signal from notes if available
+        let hireSignal = '';
+        if (fullSession && fullSession.interviewerNotes && fullSession.interviewerNotes.recommendation) {
+          const rec = fullSession.interviewerNotes.recommendation;
+          const recColors = {
+            'STRONG_HIRE': '#4caf50',
+            'HIRE': '#8bc34a',
+            'PROCEED_TO_NEXT_ROUND': '#2196f3',
+            'MAYBE': '#ff9800',
+            'NO_HIRE': '#f44336'
+          };
+          const recLabels = {
+            'STRONG_HIRE': 'Strong Hire',
+            'HIRE': 'Hire',
+            'PROCEED_TO_NEXT_ROUND': 'Next Round',
+            'MAYBE': 'Maybe',
+            'NO_HIRE': 'No Hire'
+          };
+          hireSignal = `<span style="background: ${recColors[rec] || '#666'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 8px;">${recLabels[rec] || rec}</span>`;
+        }
+        
+        // Format candidate names with hire signal
         const candidateNames = candidates.map(user => 
-          `<div class="participant-name" style="font-weight: bold; color: #4caf50;">${user.name}</div>`
-        ).join('') || '<div style="color: #666;">No candidate yet</div>';
+          `<div class="participant-name" style="font-weight: bold; color: #4caf50;">${user.name}${hireSignal}</div>`
+        ).join('') || `<div style="color: #666;">No candidate yet${hireSignal}</div>`;
         
         // Format all participants
         const allParticipants = users.map(user => {
@@ -603,7 +643,7 @@
         
         row.innerHTML = `
           <td>
-            ${isArchived ? '' : '<input type="checkbox" class="session-checkbox" data-code="' + session.code + '">'}
+            <input type="checkbox" class="session-checkbox" data-code="${session.code}">
           </td>
           <td class="session-code-cell">${session.code}</td>
           <td>${statusBadge}</td>
@@ -748,16 +788,33 @@
   
   // View session details with notes
   function viewSessionDetails(sessionCode, sessionData) {
+    console.log('viewSessionDetails called with:', sessionCode, sessionData);
+    
     const modal = document.getElementById('sessionDetailsModal');
     if (!modal) {
-      console.error('Session details modal not found');
+      console.error('Session details modal not found in DOM');
+      // Try to find it with a delay in case DOM isn't ready
+      setTimeout(() => {
+        const retryModal = document.getElementById('sessionDetailsModal');
+        if (retryModal) {
+          viewSessionDetails(sessionCode, sessionData);
+        } else {
+          alert('Session details view is not available. Please refresh the page.');
+        }
+      }, 100);
       return;
     }
     
-    console.log('Opening session details for:', sessionCode, sessionData);
+    console.log('Modal found, showing it now');
     
-    // Show modal
+    // Make sure modal is visible with high z-index
     modal.style.display = 'flex';
+    modal.style.zIndex = '10000';
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
     
     // Set session code
     const codeElement = document.getElementById('detail-session-code');

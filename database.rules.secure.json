@@ -3,13 +3,15 @@
     "sessions": {
       // Allow reading the entire sessions list
       ".read": true,
+      // Allow write at root level for deletion (admin operations)
+      ".write": true,
       
       "$sessionId": {
         // Anyone can read individual sessions (needed for candidates to join)
         ".read": true,
         
-        // Session creation and modification rules
-        ".write": "auth != null || !data.exists() || root.child('sessions').child($sessionId).child('createdBy').val() === 'Interviewer'",
+        // Session creation, modification and deletion rules
+        ".write": true,
         
         // Structure validation
         ".validate": "$sessionId.matches(/^[0-9]{6}$/)",
