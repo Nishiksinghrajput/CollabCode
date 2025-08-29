@@ -100,8 +100,8 @@
     // Track as both event and person property
     window.posthog.capture('session_joined', eventData);
     
-    // Set person properties for this session
-    window.posthog.people.set({
+    // Set person properties for this session (using setPersonProperties for newer SDK)
+    window.posthog.setPersonProperties({
       last_session_id: sessionCode,
       last_join_time: new Date().toISOString(),
       total_sessions: (window.posthog.get_property('total_sessions') || 0) + 1

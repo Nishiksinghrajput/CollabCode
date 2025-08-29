@@ -1161,8 +1161,18 @@
       modal.style.display = 'none';
     });
 
-    // Show main container
-    document.getElementById('main-container').style.display = 'flex';
+    // Show main container - force it visible
+    const mainContainer = document.getElementById('main-container');
+    if (mainContainer) {
+      mainContainer.style.display = 'flex';
+      mainContainer.style.visibility = 'visible';
+      mainContainer.style.opacity = '1';
+      console.log('Main container shown, display:', mainContainer.style.display);
+    } else {
+      console.error('CRITICAL: main-container element not found in DOM!');
+      alert('Error: Unable to load editor interface. Please refresh the page.');
+      return;
+    }
 
     // Initialize the editor session
     if (typeof initializeSession === 'function') {
