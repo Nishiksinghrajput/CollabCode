@@ -559,8 +559,8 @@
         sessionsTable.style.display = 'none';
         noSessionsMessage.style.display = 'block';
         noSessionsMessage.innerHTML = isShowingArchived
-          ? '<p>No archived sessions</p>' 
-          : '<p>No active sessions</p>';
+          ? '<p>No ended sessions</p>' 
+          : '<p>No active or in-progress sessions</p>';
         return;
       }
       
@@ -685,12 +685,12 @@
           });
         }
         
-        // Add terminate button handler
+        // Add end button handler
         const terminateBtn = row.querySelector('.terminate-btn');
         if (terminateBtn) {
           terminateBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
-            if (confirm(`End interview session ${code}? All participants will be disconnected.`)) {
+            if (confirm(`End session ${code}? This will mark the interview as completed and move it to Ended Sessions.`)) {
               terminateSessionFromDashboard(code);
             }
           });
@@ -732,26 +732,27 @@
     });
   }
   
-  // Terminate session from dashboard
+  // End session - mark as ended (not deleted)
   function terminateSessionFromDashboard(sessionCode) {
-    console.log('Terminating session:', sessionCode);
+    console.log('Ending session:', sessionCode);
     
     if (!window.firebase || !window.firebase.database) {
       alert('Database connection not ready');
       return;
     }
     
+    // Still use 'terminated' in Firebase for backward compatibility, but it means "ended"
     window.firebase.database().ref('sessions/' + sessionCode + '/terminated').set({
       terminated: true,
       terminatedBy: 'Admin Dashboard',
       terminatedAt: window.firebase.database.ServerValue.TIMESTAMP
     }).then(function() {
-      console.log('Session ' + sessionCode + ' terminated successfully');
+      console.log('Session ' + sessionCode + ' ended successfully');
       // Show feedback
-      showNotification('Session ' + sessionCode + ' has been terminated');
+      showNotification('Session ' + sessionCode + ' has been ended');
     }).catch(function(error) {
-      console.error('Error terminating session:', error);
-      alert('Failed to terminate session: ' + error.message);
+      console.error('Error ending session:', error);
+      alert('Failed to end session: ' + error.message);
     });
   }
   
