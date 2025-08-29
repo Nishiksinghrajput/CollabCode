@@ -622,9 +622,10 @@
             <div class="action-buttons">
               <button class="view-details-btn" data-code="${session.code}">📋 View</button>
               ${isArchived ? 
-                '<span style="color: #666;">Archived</span>' : 
+                `<button class="delete-btn" data-code="${session.code}" style="background: #f44336;">🗑️ Delete</button>` : 
                 `<button class="join-btn" data-code="${session.code}" ${session.isExpired || session.isTerminated ? 'disabled' : ''}>Join</button>
-                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''}>End</button>`
+                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''}>End</button>
+                 <button class="delete-btn" data-code="${session.code}" style="background: #f44336;">🗑️</button>`
               }
             </div>
           </td>
@@ -665,7 +666,21 @@
         if (viewDetailsBtn) {
           viewDetailsBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
-            viewSessionDetails(code, sessions[code]);
+            // Pass the full session data, not just from the filtered sessionInfo
+            const fullSessionData = sessions[code];
+            console.log('View details clicked for session:', code, fullSessionData);
+            viewSessionDetails(code, fullSessionData);
+          });
+        }
+        
+        // Add delete button handler
+        const deleteBtn = row.querySelector('.delete-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            if (confirm(`Permanently delete session ${code}? This action cannot be undone.`)) {
+              deleteSession(code);
+            }
           });
         }
       });
@@ -702,25 +717,51 @@
   }
   
   // Show notification helper
-  function showNotification(message) {
+  function showNotification(message, isError = false) {
     // Simple notification (you can enhance this)
     const notification = document.createElement('div');
     notification.textContent = message;
-    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 10px 20px; border-radius: 4px; z-index: 10000;';
+    notification.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${isError ? '#f44336' : '#4caf50'}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 10000;`;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
+  }
+  
+  // Delete session completely from Firebase
+  function deleteSession(sessionCode) {
+    console.log('Deleting session:', sessionCode);
+    
+    if (!window.firebase || !window.firebase.database) {
+      alert('Database connection not ready');
+      return;
+    }
+    
+    window.firebase.database().ref('sessions/' + sessionCode).remove()
+      .then(function() {
+        console.log('Session ' + sessionCode + ' deleted successfully');
+        showNotification('Session ' + sessionCode + ' has been permanently deleted');
+      })
+      .catch(function(error) {
+        console.error('Error deleting session:', error);
+        showNotification('Failed to delete session: ' + error.message, true);
+      });
   }
   
   // View session details with notes
   function viewSessionDetails(sessionCode, sessionData) {
     const modal = document.getElementById('sessionDetailsModal');
-    if (!modal) return;
+    if (!modal) {
+      console.error('Session details modal not found');
+      return;
+    }
+    
+    console.log('Opening session details for:', sessionCode, sessionData);
     
     // Show modal
     modal.style.display = 'flex';
     
     // Set session code
-    document.getElementById('detail-session-code').textContent = sessionCode;
+    const codeElement = document.getElementById('detail-session-code');
+    if (codeElement) codeElement.textContent = sessionCode;
     
     // Load notes
     if (window.firebase) {
@@ -733,43 +774,66 @@
             // Display recommendation
             if (notes.recommendation) {
               const recDiv = document.getElementById('detail-recommendation');
-              recDiv.textContent = window.formatRecommendation ? window.formatRecommendation(notes.recommendation) : notes.recommendation;
-              recDiv.className = 'detail-recommendation ' + (window.getRecommendationClass ? window.getRecommendationClass(notes.recommendation) : '');
+              if (recDiv) {
+                recDiv.textContent = window.formatRecommendation ? window.formatRecommendation(notes.recommendation) : notes.recommendation;
+                recDiv.className = 'detail-recommendation ' + (window.getRecommendationClass ? window.getRecommendationClass(notes.recommendation) : '');
+              }
             }
             
             // Display rating
-            if (notes.rating && notes.rating.overall) {
-              const stars = '★'.repeat(notes.rating.overall) + '☆'.repeat(5 - notes.rating.overall);
-              document.getElementById('display-rating').innerHTML = stars + ` (${notes.rating.overall}/5)`;
-            } else {
-              document.getElementById('display-rating').textContent = 'Not rated';
+            const ratingEl = document.getElementById('display-rating');
+            if (ratingEl) {
+              if (notes.rating && notes.rating.overall) {
+                const stars = '★'.repeat(notes.rating.overall) + '☆'.repeat(5 - notes.rating.overall);
+                ratingEl.innerHTML = stars + ` (${notes.rating.overall}/5)`;
+              } else {
+                ratingEl.textContent = 'Not rated';
+              }
             }
             
             // Display tags
-            if (notes.tags && notes.tags.length > 0) {
-              document.getElementById('display-tags').innerHTML = notes.tags.map(tag => 
-                `<span class="tag">${tag.replace(/-/g, ' ')}</span>`
-              ).join(' ');
-            } else {
-              document.getElementById('display-tags').textContent = 'No tags';
+            const tagsEl = document.getElementById('display-tags');
+            if (tagsEl) {
+              if (notes.tags && notes.tags.length > 0) {
+                tagsEl.innerHTML = notes.tags.map(tag => 
+                  `<span class="tag">${tag.replace(/-/g, ' ')}</span>`
+                ).join(' ');
+              } else {
+                tagsEl.textContent = 'No tags';
+              }
             }
             
             // Display notes content
-            document.getElementById('display-notes-content').textContent = notes.content || 'No notes added';
+            const notesContentEl = document.getElementById('display-notes-content');
+            if (notesContentEl) {
+              notesContentEl.textContent = notes.content || 'No notes added';
+            }
             
             // Display metadata
-            if (notes.updatedAt) {
-              document.getElementById('display-updated').textContent = new Date(notes.updatedAt).toLocaleString();
+            const updatedEl = document.getElementById('display-updated');
+            if (updatedEl && notes.updatedAt) {
+              updatedEl.textContent = new Date(notes.updatedAt).toLocaleString();
             }
-            document.getElementById('display-author').textContent = notes.createdBy || 'Unknown';
+            const authorEl = document.getElementById('display-author');
+            if (authorEl) {
+              authorEl.textContent = notes.createdBy || 'Unknown';
+            }
           } else {
             // No notes yet
-            document.getElementById('detail-recommendation').textContent = 'No recommendation';
-            document.getElementById('detail-recommendation').className = 'detail-recommendation';
-            document.getElementById('display-rating').textContent = 'Not rated';
-            document.getElementById('display-tags').textContent = 'No tags';
-            document.getElementById('display-notes-content').textContent = 'No notes added yet';
+            const recDiv = document.getElementById('detail-recommendation');
+            if (recDiv) {
+              recDiv.textContent = 'No recommendation';
+              recDiv.className = 'detail-recommendation';
+            }
+            const ratingEl = document.getElementById('display-rating');
+            if (ratingEl) ratingEl.textContent = 'Not rated';
+            const tagsEl = document.getElementById('display-tags');
+            if (tagsEl) tagsEl.textContent = 'No tags';
+            const notesContentEl = document.getElementById('display-notes-content');
+            if (notesContentEl) notesContentEl.textContent = 'No notes added yet';
           }
+        }).catch(error => {
+          console.error('Error loading notes:', error);
         });
       
       // Load code content
@@ -791,53 +855,85 @@
     
     // Load session info
     if (sessionData) {
-      const created = new Date(sessionData.created || Date.now());
-      document.getElementById('display-created').textContent = created.toLocaleString();
+      const createdEl = document.getElementById('display-created');
+      if (createdEl) {
+        const created = new Date(sessionData.created || Date.now());
+        createdEl.textContent = created.toLocaleString();
+      }
       
       // Calculate duration
-      const now = Date.now();
-      const duration = Math.floor((now - created.getTime()) / 1000 / 60); // minutes
-      document.getElementById('display-duration').textContent = `${duration} minutes`;
+      const durationEl = document.getElementById('display-duration');
+      if (durationEl) {
+        const now = Date.now();
+        const created = new Date(sessionData.created || Date.now());
+        const duration = Math.floor((now - created.getTime()) / 1000 / 60); // minutes
+        durationEl.textContent = `${duration} minutes`;
+      }
       
       // Participants
-      const users = Object.values(sessionData.users || {});
-      document.getElementById('display-participants').textContent = users.map(u => u.name).join(', ') || 'None';
+      const participantsEl = document.getElementById('display-participants');
+      if (participantsEl) {
+        const users = Object.values(sessionData.users || {});
+        participantsEl.textContent = users.map(u => u.name).join(', ') || 'None';
+      }
       
       // Status
-      let status = 'Active';
-      if (sessionData.terminated) status = 'Terminated';
-      else if (sessionData.archived) status = 'Archived';
-      document.getElementById('display-status').textContent = status;
+      const statusEl = document.getElementById('display-status');
+      if (statusEl) {
+        let status = 'Active';
+        if (sessionData.terminated) status = 'Terminated';
+        else if (sessionData.archived) status = 'Archived';
+        statusEl.textContent = status;
+      }
+    } else {
+      console.error('No session data provided to viewSessionDetails');
     }
     
-    // Setup tab switching
+    // Setup tab switching (remove old listeners first)
     const tabs = document.querySelectorAll('.detail-tab');
     const tabContents = document.querySelectorAll('.tab-content');
     
+    // Remove any existing listeners by cloning
     tabs.forEach(tab => {
+      const newTab = tab.cloneNode(true);
+      tab.parentNode.replaceChild(newTab, tab);
+    });
+    
+    // Re-query after cloning
+    const newTabs = document.querySelectorAll('.detail-tab');
+    newTabs.forEach(tab => {
       tab.addEventListener('click', function() {
         // Remove active class from all tabs
-        tabs.forEach(t => t.classList.remove('active'));
+        newTabs.forEach(t => t.classList.remove('active'));
         tabContents.forEach(c => c.style.display = 'none');
         
         // Add active to clicked tab
         this.classList.add('active');
         const tabName = this.getAttribute('data-tab');
-        document.getElementById(`${tabName}-tab`).style.display = 'block';
+        const tabContent = document.getElementById(`${tabName}-tab`);
+        if (tabContent) tabContent.style.display = 'block';
       });
     });
     
-    // Close button
-    document.getElementById('closeSessionDetailsBtn').addEventListener('click', function() {
-      modal.style.display = 'none';
-    });
+    // Close button - remove old listener first
+    const closeBtn = document.getElementById('closeSessionDetailsBtn');
+    if (closeBtn) {
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      newCloseBtn.addEventListener('click', function() {
+        modal.style.display = 'none';
+      });
+    }
     
-    // Close on ESC
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
+    // Close on ESC - use a named function to avoid duplicate listeners
+    const escHandler = function(e) {
+      if (e.key === 'Escape' && modal.style.display === 'flex') {
         modal.style.display = 'none';
       }
-    });
+    };
+    // Remove old listener and add new one
+    document.removeEventListener('keydown', escHandler);
+    document.addEventListener('keydown', escHandler);
   }
 
   // Track if session is starting to prevent duplicates
