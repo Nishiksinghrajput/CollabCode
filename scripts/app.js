@@ -662,10 +662,10 @@
             <div class="action-buttons">
               <button class="view-details-btn" data-code="${session.code}">📋 View</button>
               ${isArchived ? 
-                `<button class="delete-btn" data-code="${session.code}" style="background: #f44336;">🗑️ Delete</button>` : 
+                `<button class="delete-btn" data-code="${session.code}" style="background: #f44336;" title="Permanently delete from database">🗑️ DELETE FOREVER</button>` : 
                 `<button class="join-btn" data-code="${session.code}" ${session.isExpired || session.isTerminated ? 'disabled' : ''}>Join</button>
-                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''}>End</button>
-                 <button class="delete-btn" data-code="${session.code}" style="background: #f44336;">🗑️</button>`
+                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''} title="End session and archive">End</button>
+                 <button class="delete-btn" data-code="${session.code}" style="background: #f44336;" title="Permanently delete from database">🗑️</button>`
               }
             </div>
           </td>
@@ -718,8 +718,12 @@
         if (deleteBtn) {
           deleteBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
-            if (confirm(`Permanently delete session ${code}? This action cannot be undone.`)) {
-              deleteSession(code);
+            const message = `⚠️ PERMANENTLY DELETE session ${code}?\n\nThis will:\n• Remove ALL session data\n• Delete ALL interview notes\n• Remove from Firebase completely\n• This CANNOT be undone!\n\nAre you absolutely sure?`;
+            if (confirm(message)) {
+              // Double confirmation for safety
+              if (confirm(`FINAL CONFIRMATION: Delete session ${code} forever?`)) {
+                deleteSession(code);
+              }
             }
           });
         }
@@ -766,23 +770,87 @@
     setTimeout(() => notification.remove(), 3000);
   }
   
-  // Delete session completely from Firebase
-  function deleteSession(sessionCode) {
-    console.log('Deleting session:', sessionCode);
+  // Delete ALL sessions from Firebase - NUCLEAR OPTION
+  function deleteAllSessions() {
+    console.log('DELETING ALL SESSIONS FROM DATABASE');
     
     if (!window.firebase || !window.firebase.database) {
       alert('Database connection not ready');
       return;
     }
     
-    window.firebase.database().ref('sessions/' + sessionCode).remove()
+    // Delete the entire sessions node
+    window.firebase.database().ref('sessions').remove()
       .then(function() {
-        console.log('Session ' + sessionCode + ' deleted successfully');
-        showNotification('Session ' + sessionCode + ' has been permanently deleted');
+        console.log('ALL SESSIONS DELETED SUCCESSFULLY');
+        showNotification('ALL SESSIONS HAVE BEEN DELETED FROM DATABASE');
+        
+        // Force refresh the sessions list
+        setTimeout(() => {
+          if (typeof loadActiveSessions === 'function') {
+            const archivedTabBtn = document.getElementById('archivedTabBtn');
+            const isArchived = archivedTabBtn && archivedTabBtn.classList.contains('active');
+            loadActiveSessions(isArchived);
+          }
+        }, 500);
       })
       .catch(function(error) {
-        console.error('Error deleting session:', error);
-        showNotification('Failed to delete session: ' + error.message, true);
+        console.error('Error deleting all sessions:', error);
+        alert('Failed to delete all sessions: ' + error.message);
+      });
+  }
+  
+  // Make it globally accessible for console use
+  window.deleteAllSessions = deleteAllSessions;
+  
+  // Delete session completely from Firebase - HARD DELETE
+  function deleteSession(sessionCode) {
+    console.log('HARD DELETING session:', sessionCode);
+    
+    if (!window.firebase || !window.firebase.database) {
+      alert('Database connection not ready');
+      return;
+    }
+    
+    // First, try to read the session to confirm it exists
+    window.firebase.database().ref('sessions/' + sessionCode).once('value')
+      .then(function(snapshot) {
+        if (!snapshot.exists()) {
+          console.log('Session does not exist:', sessionCode);
+          showNotification('Session ' + sessionCode + ' does not exist', true);
+          return;
+        }
+        
+        console.log('Session exists, proceeding with HARD DELETE');
+        
+        // Now perform the actual deletion
+        return window.firebase.database().ref('sessions/' + sessionCode).remove();
+      })
+      .then(function(result) {
+        if (result !== undefined) { // Only show success if we actually deleted
+          console.log('Session ' + sessionCode + ' HARD DELETED successfully');
+          showNotification('Session ' + sessionCode + ' has been PERMANENTLY DELETED from database');
+          
+          // Force refresh the sessions list after a short delay
+          setTimeout(() => {
+            if (typeof loadActiveSessions === 'function') {
+              const archivedTabBtn = document.getElementById('archivedTabBtn');
+              const isArchived = archivedTabBtn && archivedTabBtn.classList.contains('active');
+              loadActiveSessions(isArchived);
+            }
+          }, 500);
+        }
+      })
+      .catch(function(error) {
+        console.error('Error HARD DELETING session:', error);
+        console.error('Error details:', error.code, error.message);
+        
+        if (error.code === 'PERMISSION_DENIED') {
+          showNotification('Permission denied. Update Firebase rules to allow deletion.', true);
+          alert('Cannot delete: Permission denied.\n\nPlease update Firebase rules:\nAdd ".write": true at the sessions root level');
+        } else {
+          showNotification('Failed to delete session: ' + error.message, true);
+        }
       });
   }
   
