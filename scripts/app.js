@@ -445,11 +445,17 @@
         this.classList.add('active');
         archivedTabBtn.classList.remove('active');
         bulkActionsBar.style.display = 'flex';
-        // Update bulk action buttons for active sessions
+        // Update bulk action buttons for active/in-progress sessions
         const endSelectedBtn = document.getElementById('endSelectedBtn');
         const deleteAllBtn = document.getElementById('endAllSessionsBtn');
-        if (endSelectedBtn) endSelectedBtn.textContent = 'End Selected';
-        if (deleteAllBtn) deleteAllBtn.textContent = 'End All Sessions';
+        if (endSelectedBtn) {
+          endSelectedBtn.textContent = 'End Selected';
+          endSelectedBtn.style.background = '#ff9800';
+        }
+        if (deleteAllBtn) {
+          deleteAllBtn.textContent = 'End All';
+          deleteAllBtn.style.background = '#ff9800';
+        }
         loadActiveSessions();
       });
     }
@@ -459,8 +465,8 @@
       archivedTabBtn.addEventListener('click', function() {
         this.classList.add('active');
         activeTabBtn.classList.remove('active');
-        bulkActionsBar.style.display = 'flex'; // Show bulk actions for archived too
-        // Update bulk action buttons for archived sessions (delete instead of end)
+        bulkActionsBar.style.display = 'flex'; // Show bulk actions for ended sessions too
+        // Update bulk action buttons for ended sessions (delete only)
         const endSelectedBtn = document.getElementById('endSelectedBtn');
         const deleteAllBtn = document.getElementById('endAllSessionsBtn');
         if (endSelectedBtn) {
@@ -468,10 +474,10 @@
           endSelectedBtn.style.background = '#f44336';
         }
         if (deleteAllBtn) {
-          deleteAllBtn.textContent = 'Delete All Archived';
+          deleteAllBtn.textContent = 'Delete All Ended';
           deleteAllBtn.style.background = '#f44336';
         }
-        loadActiveSessions(true); // Load archived
+        loadActiveSessions(true); // Load ended sessions
       });
     }
     
@@ -512,7 +518,7 @@
       const twoHours = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
       const now = Date.now();
       
-      // Filter sessions into active, archived, and terminated
+      // Filter sessions into active/in-progress and ended
       Object.keys(sessions).forEach(code => {
         const session = sessions[code];
         
@@ -529,22 +535,11 @@
           isTerminated: session.terminated && session.terminated.terminated
         };
         
-        // Terminated sessions go to archived
+        // Ended sessions go to the ended list
         if (session.terminated && session.terminated.terminated) {
-          archivedSessions.push(sessionInfo);
-        }
-        // Archive sessions older than 2 hours
-        else if (sessionAge > twoHours) {
-          archivedSessions.push(sessionInfo);
-          // Auto-mark as archived in Firebase
-          if (!session.archived) {
-            window.firebase.database().ref('sessions/' + code + '/archived').set({
-              archived: true,
-              archivedAt: window.firebase.database.ServerValue.TIMESTAMP,
-              reason: 'Auto-archived after 2 hours'
-            });
-          }
+          archivedSessions.push(sessionInfo); // Using archivedSessions array for ended sessions
         } else {
+          // Active or In Progress sessions
           activeSessions.push(sessionInfo);
           totalUsers += userCount;
         }
@@ -620,22 +615,22 @@
           return `<div class="${isAdmin ? 'participant-admin' : 'participant-name'}">${user.name || 'Anonymous'}</div>`;
         }).join('') || '<div class="participant-name">No users</div>';
         
-        // Determine session status
+        // Determine session status - Simple progression: Active -> In Progress -> Ended
         let status = 'active';
-        let statusBadge = '<span class="status-badge status-active">Active</span>';
+        let statusBadge = '';
         
         if (session.isTerminated) {
-          status = 'terminated';
-          statusBadge = '<span class="status-badge status-terminated" style="background-color: #999;">Ended</span>';
-        } else if (session.isExpired) {
-          status = 'expired';
-          statusBadge = '<span class="status-badge status-expired">Expired</span>';
+          // Session has ended
+          status = 'ended';
+          statusBadge = '<span class="status-badge status-ended" style="background-color: #666;">Ended</span>';
         } else if (candidates.length > 0 && interviewers.length > 0) {
+          // Both candidate and interviewer present - interview in progress
           status = 'in-progress';
-          statusBadge = '<span class="status-badge status-in-progress">In Progress</span>';
-        } else if (candidates.length === 0 && interviewers.length > 0) {
-          status = 'waiting';
-          statusBadge = '<span class="status-badge status-active">Waiting</span>';
+          statusBadge = '<span class="status-badge status-in-progress" style="background-color: #2196f3;">In Progress</span>';
+        } else {
+          // Session created but interview not started yet
+          status = 'active';
+          statusBadge = '<span class="status-badge status-active" style="background-color: #4caf50;">Active</span>';
         }
         
         // Format time

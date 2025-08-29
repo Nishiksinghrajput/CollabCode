@@ -5,25 +5,35 @@
   
   // Initialize Slack integration
   window.initializeSlackIntegration = function(sessionCode, sessionData) {
+    console.log('Initializing Slack integration for session:', sessionCode);
     currentSessionCode = sessionCode;
     currentSessionData = sessionData;
     
     // Setup Slack share button
     const shareBtn = document.getElementById('shareToSlackBtn');
     if (shareBtn) {
+      console.log('Found Slack share button, setting up click handler');
       const newShareBtn = shareBtn.cloneNode(true);
       shareBtn.parentNode.replaceChild(newShareBtn, shareBtn);
       
       newShareBtn.addEventListener('click', function() {
+        console.log('Slack button clicked');
         openSlackShareModal();
       });
+    } else {
+      console.error('Slack share button not found in DOM');
     }
   };
   
   // Open Slack share modal
   function openSlackShareModal() {
+    console.log('Opening Slack share modal');
     const modal = document.getElementById('slackConfigModal');
-    if (!modal) return;
+    if (!modal) {
+      console.error('Slack config modal not found in DOM');
+      alert('Slack sharing is not available. Please refresh the page.');
+      return;
+    }
     
     // Load saved webhook URL
     const savedWebhook = localStorage.getItem('slackWebhookUrl');
