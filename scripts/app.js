@@ -491,11 +491,6 @@
       Object.keys(sessions).forEach(code => {
         const session = sessions[code];
         
-        // Skip terminated sessions
-        if (session.terminated && session.terminated.terminated) {
-          return;
-        }
-        
         const sessionAge = now - (session.created || now);
         const userCount = Object.keys(session.users || {}).length;
         
@@ -505,11 +500,16 @@
           userCount: userCount,
           created: session.created || now,
           createdBy: session.createdBy || 'Unknown',
-          isExpired: sessionAge > twoHours
+          isExpired: sessionAge > twoHours,
+          isTerminated: session.terminated && session.terminated.terminated
         };
         
+        // Terminated sessions go to archived
+        if (session.terminated && session.terminated.terminated) {
+          archivedSessions.push(sessionInfo);
+        }
         // Archive sessions older than 2 hours
-        if (sessionAge > twoHours) {
+        else if (sessionAge > twoHours) {
           archivedSessions.push(sessionInfo);
           // Auto-mark as archived in Firebase
           if (!session.archived) {
@@ -531,16 +531,7 @@
       if (activeSessionsCount) activeSessionsCount.textContent = activeSessions.length;
       if (totalUsersCount) totalUsersCount.textContent = totalUsers;
       
-      if (activeSessions.length === 0) {
-        sessionsTable.style.display = 'none';
-        noSessionsMessage.style.display = 'block';
-        return;
-      }
-      
-      sessionsTable.style.display = 'table';
-      noSessionsMessage.style.display = 'none';
-      
-      // Choose which sessions to display
+      // Choose which sessions to display based on active tab
       const sessionsToDisplay = (archivedTabBtn && archivedTabBtn.classList.contains('active')) ? archivedSessions : activeSessions;
       
       if (sessionsToDisplay.length === 0) {
@@ -583,7 +574,10 @@
         let status = 'active';
         let statusBadge = '<span class="status-badge status-active">Active</span>';
         
-        if (session.isExpired) {
+        if (session.isTerminated) {
+          status = 'terminated';
+          statusBadge = '<span class="status-badge status-terminated" style="background-color: #999;">Ended</span>';
+        } else if (session.isExpired) {
           status = 'expired';
           statusBadge = '<span class="status-badge status-expired">Expired</span>';
         } else if (candidates.length > 0 && interviewers.length > 0) {
@@ -616,10 +610,11 @@
           <td class="session-time">${createdTime}</td>
           <td>
             <div class="action-buttons">
+              <button class="view-details-btn" data-code="${session.code}">📋 View</button>
               ${isArchived ? 
                 '<span style="color: #666;">Archived</span>' : 
-                `<button class="join-btn" data-code="${session.code}" ${session.isExpired ? 'disabled' : ''}>Join</button>
-                 <button class="terminate-btn" data-code="${session.code}">End</button>`
+                `<button class="join-btn" data-code="${session.code}" ${session.isExpired || session.isTerminated ? 'disabled' : ''}>Join</button>
+                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''}>End</button>`
               }
             </div>
           </td>
@@ -652,6 +647,15 @@
             if (confirm(`End interview session ${code}? All participants will be disconnected.`)) {
               terminateSessionFromDashboard(code);
             }
+          });
+        }
+        
+        // Add view details button handler
+        const viewDetailsBtn = row.querySelector('.view-details-btn');
+        if (viewDetailsBtn) {
+          viewDetailsBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            viewSessionDetails(code, sessions[code]);
           });
         }
       });
@@ -692,6 +696,135 @@
     notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #4caf50; color: white; padding: 10px 20px; border-radius: 4px; z-index: 10000;';
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
+  }
+  
+  // View session details with notes
+  function viewSessionDetails(sessionCode, sessionData) {
+    const modal = document.getElementById('sessionDetailsModal');
+    if (!modal) return;
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Set session code
+    document.getElementById('detail-session-code').textContent = sessionCode;
+    
+    // Load notes
+    if (window.firebase) {
+      window.firebase.database()
+        .ref(`sessions/${sessionCode}/interviewerNotes`)
+        .once('value')
+        .then(snapshot => {
+          const notes = snapshot.val();
+          if (notes) {
+            // Display recommendation
+            if (notes.recommendation) {
+              const recDiv = document.getElementById('detail-recommendation');
+              recDiv.textContent = window.formatRecommendation ? window.formatRecommendation(notes.recommendation) : notes.recommendation;
+              recDiv.className = 'detail-recommendation ' + (window.getRecommendationClass ? window.getRecommendationClass(notes.recommendation) : '');
+            }
+            
+            // Display rating
+            if (notes.rating && notes.rating.overall) {
+              const stars = '★'.repeat(notes.rating.overall) + '☆'.repeat(5 - notes.rating.overall);
+              document.getElementById('display-rating').innerHTML = stars + ` (${notes.rating.overall}/5)`;
+            } else {
+              document.getElementById('display-rating').textContent = 'Not rated';
+            }
+            
+            // Display tags
+            if (notes.tags && notes.tags.length > 0) {
+              document.getElementById('display-tags').innerHTML = notes.tags.map(tag => 
+                `<span class="tag">${tag.replace(/-/g, ' ')}</span>`
+              ).join(' ');
+            } else {
+              document.getElementById('display-tags').textContent = 'No tags';
+            }
+            
+            // Display notes content
+            document.getElementById('display-notes-content').textContent = notes.content || 'No notes added';
+            
+            // Display metadata
+            if (notes.updatedAt) {
+              document.getElementById('display-updated').textContent = new Date(notes.updatedAt).toLocaleString();
+            }
+            document.getElementById('display-author').textContent = notes.createdBy || 'Unknown';
+          } else {
+            // No notes yet
+            document.getElementById('detail-recommendation').textContent = 'No recommendation';
+            document.getElementById('detail-recommendation').className = 'detail-recommendation';
+            document.getElementById('display-rating').textContent = 'Not rated';
+            document.getElementById('display-tags').textContent = 'No tags';
+            document.getElementById('display-notes-content').textContent = 'No notes added yet';
+          }
+        });
+      
+      // Load code content
+      window.firebase.database()
+        .ref(`sessions/${sessionCode}/firepad`)
+        .once('value')
+        .then(snapshot => {
+          const firepadData = snapshot.val();
+          // Note: Firepad data is complex, we'd need to parse it properly
+          // For now, just indicate if code exists
+          const codeTab = document.getElementById('code-tab');
+          if (firepadData && firepadData.history) {
+            codeTab.innerHTML = '<p style="padding: 20px;">Code content available. Click "Join" to view in editor.</p>';
+          } else {
+            codeTab.innerHTML = '<p style="padding: 20px;">No code written in this session.</p>';
+          }
+        });
+    }
+    
+    // Load session info
+    if (sessionData) {
+      const created = new Date(sessionData.created || Date.now());
+      document.getElementById('display-created').textContent = created.toLocaleString();
+      
+      // Calculate duration
+      const now = Date.now();
+      const duration = Math.floor((now - created.getTime()) / 1000 / 60); // minutes
+      document.getElementById('display-duration').textContent = `${duration} minutes`;
+      
+      // Participants
+      const users = Object.values(sessionData.users || {});
+      document.getElementById('display-participants').textContent = users.map(u => u.name).join(', ') || 'None';
+      
+      // Status
+      let status = 'Active';
+      if (sessionData.terminated) status = 'Terminated';
+      else if (sessionData.archived) status = 'Archived';
+      document.getElementById('display-status').textContent = status;
+    }
+    
+    // Setup tab switching
+    const tabs = document.querySelectorAll('.detail-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.style.display = 'none');
+        
+        // Add active to clicked tab
+        this.classList.add('active');
+        const tabName = this.getAttribute('data-tab');
+        document.getElementById(`${tabName}-tab`).style.display = 'block';
+      });
+    });
+    
+    // Close button
+    document.getElementById('closeSessionDetailsBtn').addEventListener('click', function() {
+      modal.style.display = 'none';
+    });
+    
+    // Close on ESC
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        modal.style.display = 'none';
+      }
+    });
   }
 
   // Track if session is starting to prevent duplicates
