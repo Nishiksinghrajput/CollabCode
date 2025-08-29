@@ -37,6 +37,13 @@
         "createdBy": {
           // Creator can only be set once
           ".write": "!data.exists()"
+        },
+        
+        "interviewerNotes": {
+          // Only authenticated users (interviewers) can read/write notes
+          ".read": "auth != null || root.child('sessions').child($sessionId).child('createdBy').val() === 'Interviewer'",
+          ".write": "auth != null || root.child('sessions').child($sessionId).child('createdBy').val() === 'Interviewer'",
+          ".validate": "newData.hasChildren(['content', 'updatedAt', 'createdBy'])"
         }
       }
     }
