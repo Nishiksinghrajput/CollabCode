@@ -74,13 +74,19 @@
           return;
         }
         
+        // Initialize session tracking (IP, device, duplicate login check)
+        if (window.SessionTracking) {
+          candidateJoinBtn.textContent = 'Checking security...';
+          const canProceed = await window.SessionTracking.initialize(sessionCode, 'candidate', name);
+          if (!canProceed) {
+            candidateJoinBtn.disabled = false;
+            candidateJoinBtn.textContent = 'Join Session';
+            return;
+          }
+        }
+        
         Auth.joinAsCandidate(name);
         window.location.hash = sessionCode;
-        
-        // Initialize PostHog tracking for candidate
-        if (window.SessionTracking) {
-          window.SessionTracking.initialize(sessionCode, 'candidate', name);
-        }
         
         startSession(name, sessionCode, false);
       }
@@ -228,7 +234,7 @@
     }
 
     // Create new session
-    createSessionBtn.addEventListener('click', function() {
+    createSessionBtn.addEventListener('click', async function() {
       // Check if already starting
       if (sessionStarting) {
         console.warn('CREATE SESSION: Already starting a session, ignoring click');
@@ -251,15 +257,26 @@
       window.location.hash = sessionCode;
       console.log('CREATE SESSION: Current URL hash:', window.location.hash);
       
-      // Track interviewer creating and joining session with PostHog
+      // Track interviewer creating and joining session
       const currentUser = Auth.getCurrentUser();
       const interviewerName = document.getElementById('interviewerName')?.value.trim();
       const adminName = interviewerName ? 
         `${interviewerName} (${currentUser.email})` : 
         currentUser.email || 'Interviewer';
       
-      if (window.initializeSessionTracking) {
-        window.initializeSessionTracking(sessionCode, 'interviewer', adminName);
+      // Initialize session tracking (IP, device tracking)
+      if (window.SessionTracking) {
+        createSessionBtn.disabled = true;
+        createSessionBtn.textContent = 'Initializing security...';
+        const canProceed = await window.SessionTracking.initialize(sessionCode, 'interviewer', adminName);
+        if (!canProceed) {
+          createSessionBtn.disabled = false;
+          createSessionBtn.textContent = 'Create New Session';
+          // Re-show dashboard
+          document.getElementById('adminDashboardModal').style.display = 'flex';
+          document.getElementById('activeSession').style.display = 'none';
+          return;
+        }
       }
       
       // Start session - DON'T set sessionStarting here, let startSession handle it
@@ -267,19 +284,28 @@
     });
 
     // Join existing session
-    adminJoinBtn.addEventListener('click', function() {
+    adminJoinBtn.addEventListener('click', async function() {
       const sessionCode = adminSessionCode.value.trim();
       
       if (sessionCode.length === 6) {
-        // Track interviewer joining session with PostHog
+        // Track interviewer joining session
         const currentUser = Auth.getCurrentUser();
         const interviewerName = document.getElementById('interviewerName')?.value.trim();
         const adminName = interviewerName ? 
           `${interviewerName} (${currentUser.email})` : 
           currentUser.email || 'Interviewer';
         
-        if (window.initializeSessionTracking) {
-          window.initializeSessionTracking(sessionCode, 'interviewer', adminName);
+        // Initialize session tracking (IP, device, duplicate login check)
+        if (window.SessionTracking) {
+          adminJoinBtn.disabled = true;
+          adminJoinBtn.textContent = 'Checking security...';
+          const canProceed = await window.SessionTracking.initialize(sessionCode, 'interviewer', adminName);
+          if (!canProceed) {
+            adminJoinBtn.disabled = false;
+            adminJoinBtn.textContent = 'Join Session';
+            return;
+          }
+          adminJoinBtn.textContent = 'Joining...';
         }
         
         window.location.hash = sessionCode;
