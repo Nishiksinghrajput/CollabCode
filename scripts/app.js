@@ -673,12 +673,28 @@
         
         // Separate candidates and interviewers
         const users = Object.values(session.users);
-        const candidates = users.filter(user => 
-          user.name && !user.name.toLowerCase().includes('interviewer')
-        );
-        const interviewers = users.filter(user => 
-          user.name && user.name.toLowerCase().includes('interviewer')
-        );
+        const candidates = users.filter(user => {
+          if (!user.name) return false;
+          const nameLower = user.name.toLowerCase();
+          // Exclude if it contains interviewer patterns, email domains, or admin keywords
+          return !nameLower.includes('interviewer') && 
+                 !nameLower.includes('@') && 
+                 !nameLower.includes('admin') &&
+                 !nameLower.includes('.com') &&
+                 !nameLower.includes('.io') &&
+                 !nameLower.includes('.net');
+        });
+        const interviewers = users.filter(user => {
+          if (!user.name) return false;
+          const nameLower = user.name.toLowerCase();
+          // Include if it contains interviewer patterns or email domains
+          return nameLower.includes('interviewer') || 
+                 nameLower.includes('@') || 
+                 nameLower.includes('admin') ||
+                 nameLower.includes('.com') ||
+                 nameLower.includes('.io') ||
+                 nameLower.includes('.net');
+        });
         
         // Get hire signal from notes if available
         let hireSignal = '';
@@ -701,16 +717,21 @@
           hireSignal = `<span style="background: ${recColors[rec] || '#666'}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 8px;">${recLabels[rec] || rec}</span>`;
         }
         
-        // Format candidate names with hire signal
+        // Format candidate names with hire signal (only show candidates)
         const candidateNames = candidates.map(user => 
           `<div class="participant-name" style="font-weight: bold; color: #4caf50;">${user.name}${hireSignal}</div>`
         ).join('') || `<div style="color: #666;">No candidate yet${hireSignal}</div>`;
         
-        // Format all participants
-        const allParticipants = users.map(user => {
-          const isAdmin = user.name && user.name.toLowerCase().includes('interviewer');
-          return `<div class="${isAdmin ? 'participant-admin' : 'participant-name'}">${user.name || 'Anonymous'}</div>`;
-        }).join('') || '<div class="participant-name">No users</div>';
+        // Format interviewer names
+        const interviewerNames = interviewers.length > 0 ? 
+          `<div style="font-size: 11px; color: #888; margin-top: 4px;">Interviewed by: ${interviewers.map(i => i.name).join(', ')}</div>` : '';
+        
+        // Format all participants with clear separation
+        const allParticipants = `
+          ${candidates.length > 0 ? `<div style="margin-bottom: 8px;"><strong>Candidates:</strong><br>${candidates.map(c => `<span style="color: #4caf50;">${c.name}</span>`).join(', ')}</div>` : ''}
+          ${interviewers.length > 0 ? `<div><strong>Interviewers:</strong><br>${interviewers.map(i => `<span style="color: #667eea;">${i.name}</span>`).join(', ')}</div>` : ''}
+          ${users.length === 0 ? '<div style="color: #666;">No participants</div>' : ''}
+        `;
         
         // Determine session status - Simple progression: Active -> In Progress -> Ended
         let status = 'active';
@@ -742,6 +763,7 @@
           <td>
             <div class="participants-list">
               ${candidateNames}
+              ${interviewerNames}
             </div>
           </td>
           <td>
