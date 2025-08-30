@@ -751,13 +751,70 @@
           </td>
           <td class="session-time">${createdTime}</td>
           <td>
-            <div class="action-buttons">
-              <button class="view-details-btn" data-code="${session.code}">📋 View</button>
-              ${isArchived ? 
-                `<button class="delete-btn" data-code="${session.code}" style="background: #f44336;" title="Permanently delete from database">🗑️ DELETE FOREVER</button>` : 
-                `<button class="join-btn" data-code="${session.code}" ${session.isExpired || session.isTerminated ? 'disabled' : ''}>Join</button>
-                 <button class="terminate-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''} title="End session and archive">End</button>
-                 <button class="delete-btn" data-code="${session.code}" style="background: #f44336;" title="Permanently delete from database">🗑️</button>`
+            <div class="action-buttons-modern">
+              <button class="action-btn view-btn" data-code="${session.code}" title="View Details">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>View</span>
+              </button>
+              
+              ${!isShowingArchived ? `
+                <button class="action-btn slack-btn" data-code="${session.code}" title="Export to Slack">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+                  </svg>
+                  <span>Slack</span>
+                </button>
+                
+                <button class="action-btn email-btn coming-soon" disabled title="Email Export - Coming Soon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span>Email</span>
+                  <span class="coming-soon-badge">Soon</span>
+                </button>
+                
+                <button class="action-btn csv-btn coming-soon" disabled title="CSV Export - Coming Soon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  <span>CSV</span>
+                  <span class="coming-soon-badge">Soon</span>
+                </button>
+              ` : ''}
+              
+              ${isShowingArchived ? 
+                `<button class="action-btn delete-forever-btn" data-code="${session.code}" title="Permanently Delete">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                  <span>Delete Forever</span>
+                </button>` : 
+                `<button class="action-btn join-btn" data-code="${session.code}" ${session.isExpired || session.isTerminated ? 'disabled' : ''} title="Join Session">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                    <polyline points="10 17 15 12 10 7"></polyline>
+                    <line x1="15" y1="12" x2="3" y2="12"></line>
+                  </svg>
+                  <span>Join</span>
+                </button>
+                 <button class="action-btn end-btn" data-code="${session.code}" ${session.isTerminated ? 'disabled' : ''} title="End Session">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <rect x="9" y="9" width="6" height="6"></rect>
+                  </svg>
+                  <span>End</span>
+                </button>`
               }
             </div>
           </td>
@@ -798,10 +855,10 @@
           });
         }
         
-        // Add view details button handler
-        const viewDetailsBtn = row.querySelector('.view-details-btn');
-        if (viewDetailsBtn) {
-          viewDetailsBtn.addEventListener('click', function() {
+        // Add view button handler
+        const viewBtn = row.querySelector('.view-btn');
+        if (viewBtn) {
+          viewBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
             // Pass the full session data, not just from the filtered sessionInfo
             const fullSessionData = sessions[code];
@@ -810,10 +867,21 @@
           });
         }
         
-        // Add delete button handler
-        const deleteBtn = row.querySelector('.delete-btn');
-        if (deleteBtn) {
-          deleteBtn.addEventListener('click', function() {
+        // Add Slack export button handler
+        const slackBtn = row.querySelector('.slack-btn');
+        if (slackBtn) {
+          slackBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            const fullSessionData = sessions[code];
+            console.log('Slack export clicked for session:', code);
+            exportSessionToSlack(code, fullSessionData);
+          });
+        }
+        
+        // Add delete forever button handler
+        const deleteForeverBtn = row.querySelector('.delete-forever-btn');
+        if (deleteForeverBtn) {
+          deleteForeverBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
             const message = `⚠️ PERMANENTLY DELETE session ${code}?\n\nThis will:\n• Remove ALL session data\n• Delete ALL interview notes\n• Remove from Firebase completely\n• This CANNOT be undone!\n\nAre you absolutely sure?`;
             if (confirm(message)) {
@@ -821,6 +889,17 @@
               if (confirm(`FINAL CONFIRMATION: Delete session ${code} forever?`)) {
                 deleteSession(code);
               }
+            }
+          });
+        }
+        
+        // Add end button handler
+        const endBtn = row.querySelector('.end-btn');
+        if (endBtn) {
+          endBtn.addEventListener('click', function() {
+            const code = this.getAttribute('data-code');
+            if (confirm(`End session ${code}? This will mark the interview as completed and move it to Ended Sessions.`)) {
+              terminateSessionFromDashboard(code);
             }
           });
         }
@@ -891,6 +970,31 @@
     notification.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${isError ? '#f44336' : '#4caf50'}; color: white; padding: 10px 20px; border-radius: 4px; z-index: 10000;`;
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 3000);
+  }
+  
+  // Export session to Slack directly from session row
+  function exportSessionToSlack(sessionCode, sessionData) {
+    console.log('Exporting session to Slack:', sessionCode);
+    
+    // Load slack integration script if not already loaded
+    if (!window.initializeSlackIntegration) {
+      const script = document.createElement('script');
+      script.src = 'scripts/slack-integration.js';
+      script.onload = () => {
+        proceedWithSlackExport(sessionCode, sessionData);
+      };
+      document.body.appendChild(script);
+    } else {
+      proceedWithSlackExport(sessionCode, sessionData);
+    }
+  }
+  
+  function proceedWithSlackExport(sessionCode, sessionData) {
+    // Initialize Slack integration
+    window.initializeSlackIntegration(sessionCode, sessionData);
+    
+    // Open the Slack share modal directly
+    window.openSlackShareModal();
   }
   
   // Delete ALL sessions from Firebase - NUCLEAR OPTION
