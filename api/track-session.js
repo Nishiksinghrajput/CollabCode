@@ -253,9 +253,12 @@ export default async function handler(req, res) {
     
     trackingData.securityFlags = securityFlags;
     
-    // Store in database (you'll need to set up Firebase Admin SDK)
-    // For now, we'll just return the data
-    // In production, store this in Firebase under sessions/${sessionCode}/tracking/${timestamp}
+    // Store in Firebase
+    // Store tracking data in Firebase
+    const trackingRef = `sessions/${sessionCode}/tracking/${Date.now()}_${userId}`;
+    // This would require Firebase Admin SDK setup on Vercel
+    // For now, we'll send it back to the client to store
+    trackingData.firebasePath = trackingRef;
     
     // Return response
     res.status(200).json({

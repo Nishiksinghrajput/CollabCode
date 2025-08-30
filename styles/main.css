@@ -2995,3 +2995,103 @@ a.powered-by-firepad {
     font-size: 8px;
   }
 }
+
+/* Security Tab Styles */
+.security-info-display {
+  padding: 20px;
+  color: #fff;
+}
+
+.security-info-display h4 {
+  margin: 20px 0 10px;
+  color: #00ff00;
+  border-bottom: 1px solid #444;
+  padding-bottom: 5px;
+}
+
+.security-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+}
+
+.security-table th {
+  background: rgba(0, 255, 0, 0.1);
+  color: #00ff00;
+  padding: 10px;
+  text-align: left;
+  border: 1px solid #444;
+  font-size: 12px;
+}
+
+.security-table td {
+  padding: 8px;
+  border: 1px solid #444;
+  color: #fff;
+  font-size: 11px;
+}
+
+.security-table tbody tr:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+#security-alerts-list {
+  list-style: none;
+  padding: 0;
+}
+
+#security-alerts-list li {
+  background: rgba(255, 0, 0, 0.1);
+  border-left: 3px solid #ff0000;
+  padding: 10px;
+  margin: 5px 0;
+  color: #ffaaaa;
+}
+
+#security-alerts-list li.warning {
+  background: rgba(255, 255, 0, 0.1);
+  border-left-color: #ffff00;
+  color: #ffffaa;
+}
+
+#security-alerts-list li.info {
+  background: rgba(0, 100, 255, 0.1);
+  border-left-color: #0064ff;
+  color: #aaccff;
+}
+
+.loading-message {
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.security-flag {
+  display: inline-block;
+  padding: 2px 6px;
+  margin: 0 2px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.security-flag.vpn {
+  background: #ff4444;
+  color: white;
+}
+
+.security-flag.proxy {
+  background: #ff8800;
+  color: white;
+}
+
+.security-flag.datacenter {
+  background: #ffaa00;
+  color: black;
+}
+
+.security-flag.suspicious {
+  background: #ff0000;
+  color: white;
+}

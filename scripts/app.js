@@ -1325,7 +1325,15 @@
         this.classList.add('active');
         const tabName = this.getAttribute('data-tab');
         const tabContent = document.getElementById(`${tabName}-tab`);
-        if (tabContent) tabContent.style.display = 'block';
+        if (tabContent) {
+          tabContent.style.display = 'block';
+          
+          // If security tab, load tracking data
+          if (tabName === 'security' && window.SessionTracking) {
+            const sessionCode = document.getElementById('detail-session-code').textContent;
+            window.SessionTracking.displaySecurityTab(sessionCode);
+          }
+        }
       });
     });
     

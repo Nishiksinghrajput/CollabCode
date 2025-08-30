@@ -374,6 +374,7 @@
             <button class="detail-tab active" data-tab="notes">📝 Notes</button>
             <button class="detail-tab" data-tab="code">💻 Code</button>
             <button class="detail-tab" data-tab="info">ℹ️ Info</button>
+            <button class="detail-tab" data-tab="security">🔒 Security</button>
           </div>
           
           <div class="tab-content" id="notes-tab" style="display: block;">
@@ -404,6 +405,41 @@
               <p><strong>Duration:</strong> <span id="display-duration"></span></p>
               <p><strong>Participants:</strong> <span id="display-participants"></span></p>
               <p><strong>Status:</strong> <span id="display-status"></span></p>
+            </div>
+          </div>
+          
+          <div class="tab-content" id="security-tab" style="display: none;">
+            <div class="security-info-display">
+              <h4>🔍 Session Security & Tracking</h4>
+              <div id="security-tracking-data">
+                <p class="loading-message">Loading security data...</p>
+              </div>
+              
+              <h4>👥 Participant Activity</h4>
+              <div id="participant-activity">
+                <table class="security-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Type</th>
+                      <th>Location</th>
+                      <th>Device</th>
+                      <th>IP Hash</th>
+                      <th>Flags</th>
+                    </tr>
+                  </thead>
+                  <tbody id="participant-activity-body">
+                    <!-- Will be populated dynamically -->
+                  </tbody>
+                </table>
+              </div>
+              
+              <h4>⚠️ Security Alerts</h4>
+              <div id="security-alerts">
+                <ul id="security-alerts-list">
+                  <!-- Will be populated dynamically -->
+                </ul>
+              </div>
             </div>
           </div>
         </div>
