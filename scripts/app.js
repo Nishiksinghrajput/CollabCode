@@ -157,6 +157,20 @@
     const copyCodeBtn = document.getElementById('copyCodeBtn');
     const viewAllSessionsBtn = document.getElementById('viewAllSessionsBtn');
     const closeSessionsModalBtn = document.getElementById('closeSessionsModalBtn');
+    const interviewerNameInput = document.getElementById('interviewerName');
+    
+    // Load saved interviewer name from localStorage
+    if (interviewerNameInput) {
+      const savedName = localStorage.getItem('interviewerName');
+      if (savedName) {
+        interviewerNameInput.value = savedName;
+      }
+      
+      // Save name when it changes
+      interviewerNameInput.addEventListener('input', function() {
+        localStorage.setItem('interviewerName', this.value.trim());
+      });
+    }
     
     // View all sessions button
     if (viewAllSessionsBtn) {
@@ -238,12 +252,18 @@
       console.log('CREATE SESSION: Current URL hash:', window.location.hash);
       
       // Track interviewer creating and joining session with PostHog
+      const currentUser = Auth.getCurrentUser();
+      const interviewerName = document.getElementById('interviewerName')?.value.trim();
+      const adminName = interviewerName ? 
+        `${interviewerName} (${currentUser.email})` : 
+        currentUser.email || 'Interviewer';
+      
       if (window.initializeSessionTracking) {
-        window.initializeSessionTracking(sessionCode, 'interviewer', 'Interviewer');
+        window.initializeSessionTracking(sessionCode, 'interviewer', adminName);
       }
       
       // Start session - DON'T set sessionStarting here, let startSession handle it
-      startSession('Interviewer', sessionCode, true);
+      startSession(adminName, sessionCode, true);
     });
 
     // Join existing session
@@ -252,12 +272,18 @@
       
       if (sessionCode.length === 6) {
         // Track interviewer joining session with PostHog
+        const currentUser = Auth.getCurrentUser();
+        const interviewerName = document.getElementById('interviewerName')?.value.trim();
+        const adminName = interviewerName ? 
+          `${interviewerName} (${currentUser.email})` : 
+          currentUser.email || 'Interviewer';
+        
         if (window.initializeSessionTracking) {
-          window.initializeSessionTracking(sessionCode, 'interviewer', 'Interviewer');
+          window.initializeSessionTracking(sessionCode, 'interviewer', adminName);
         }
         
         window.location.hash = sessionCode;
-        startSession('Interviewer', sessionCode, false);
+        startSession(adminName, sessionCode, false);
       }
     });
 
@@ -591,10 +617,15 @@
         const sessionAge = now - (session.created || now);
         const userCount = Object.keys(session.users || {}).length;
         
+        // For ended sessions, use preserved participants if available
+        const participants = (session.terminated && session.terminated.terminated && session.preservedParticipants) 
+          ? session.preservedParticipants 
+          : session.users || {};
+          
         const sessionInfo = {
           code: code,
-          users: session.users || {},
-          userCount: userCount,
+          users: participants,
+          userCount: Object.keys(participants).length,
           created: session.created || now,
           createdBy: session.createdBy || 'Unknown',
           isExpired: sessionAge > twoHours,
@@ -746,8 +777,13 @@
           joinBtn.addEventListener('click', function() {
             const code = this.getAttribute('data-code');
             document.getElementById('sessionsModal').style.display = 'none';
+            const currentUser = Auth.getCurrentUser();
+            const interviewerName = document.getElementById('interviewerName')?.value.trim();
+            const adminName = interviewerName ? 
+              `${interviewerName} (${currentUser.email})` : 
+              currentUser.email || 'Interviewer';
             window.location.hash = code;
-            startSession('Interviewer', code, false);
+            startSession(adminName, code, false);
           });
         }
         
@@ -812,18 +848,38 @@
       window.trackSessionEnd('admin_ended');
     }
     
-    // Still use 'terminated' in Firebase for backward compatibility, but it means "ended"
-    window.firebase.database().ref('sessions/' + sessionCode + '/terminated').set({
-      terminated: true,
-      terminatedBy: 'Admin Dashboard',
-      terminatedAt: window.firebase.database.ServerValue.TIMESTAMP
-    }).then(function() {
-      console.log('Session ' + sessionCode + ' ended successfully');
-      // Show feedback
-      showNotification('Session ' + sessionCode + ' has been ended');
-    }).catch(function(error) {
-      console.error('Error ending session:', error);
-      alert('Failed to end session: ' + error.message);
+    const sessionRef = window.firebase.database().ref('sessions/' + sessionCode);
+    
+    // First, preserve the current participants before ending
+    sessionRef.child('users').once('value').then(function(snapshot) {
+      const currentUsers = snapshot.val() || {};
+      
+      // Save participants data permanently
+      const participantsData = {};
+      Object.keys(currentUsers).forEach(userId => {
+        const user = currentUsers[userId];
+        participantsData[userId] = {
+          name: user.name || 'Unknown',
+          joinedAt: user.timestamp || Date.now()
+        };
+      });
+      
+      // Now terminate the session with preserved participant data
+      sessionRef.update({
+        terminated: {
+          terminated: true,
+          terminatedBy: 'Admin Dashboard',
+          terminatedAt: window.firebase.database.ServerValue.TIMESTAMP
+        },
+        preservedParticipants: participantsData
+      }).then(function() {
+        console.log('Session ' + sessionCode + ' ended successfully with preserved participants');
+        // Show feedback
+        showNotification('Session ' + sessionCode + ' has been ended');
+      }).catch(function(error) {
+        console.error('Error ending session:', error);
+        alert('Failed to end session: ' + error.message);
+      });
     });
   }
   
@@ -1067,10 +1123,17 @@
         durationEl.textContent = `${duration} minutes`;
       }
       
-      // Participants
+      // Participants - use preserved participants for ended sessions
       const participantsEl = document.getElementById('display-participants');
       if (participantsEl) {
-        const users = Object.values(sessionData.users || {});
+        let users;
+        if (sessionData.terminated && sessionData.terminated.terminated && sessionData.preservedParticipants) {
+          // For ended sessions, use preserved participants
+          users = Object.values(sessionData.preservedParticipants || {});
+        } else {
+          // For active sessions, use current users
+          users = Object.values(sessionData.users || {});
+        }
         participantsEl.textContent = users.map(u => u.name).join(', ') || 'None';
       }
       

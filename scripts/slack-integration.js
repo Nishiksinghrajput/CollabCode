@@ -202,12 +202,27 @@
   
   // Get candidate name from session data
   function getCandidateName() {
-    if (!currentSessionData || !currentSessionData.users) return 'Unknown Candidate';
+    if (!currentSessionData) return 'Unknown Candidate';
     
-    const users = Object.values(currentSessionData.users);
-    const candidate = users.find(user => 
-      user.name && !user.name.toLowerCase().includes('interviewer')
-    );
+    // For ended sessions, use preservedParticipants
+    let users;
+    if (currentSessionData.terminated && currentSessionData.terminated.terminated && currentSessionData.preservedParticipants) {
+      users = Object.values(currentSessionData.preservedParticipants);
+    } else if (currentSessionData.users) {
+      users = Object.values(currentSessionData.users);
+    } else {
+      return 'Unknown Candidate';
+    }
+    
+    // Find the candidate (not interviewer)
+    const candidate = users.find(user => {
+      if (!user.name) return false;
+      const nameLower = user.name.toLowerCase();
+      // Check if it's not an interviewer (doesn't contain 'interviewer' or email patterns)
+      return !nameLower.includes('interviewer') && 
+             !nameLower.includes('@') && 
+             !nameLower.includes('admin');
+    });
     
     return candidate?.name || 'Unknown Candidate';
   }

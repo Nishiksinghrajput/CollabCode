@@ -614,23 +614,41 @@
     
     // Set a termination flag and save code in Firebase
     if (sessionRef) {
-      // Save the code separately first
-      sessionRef.child('finalCode').set({
-        content: finalCode,
-        language: language,
-        savedAt: firebase.database.ServerValue.TIMESTAMP,
-        lineCount: finalCode.split('\n').length,
-        characterCount: finalCode.length,
-        savedBy: currentUser.name
-      }).then(() => {
-        // Then set the termination flag
-        return sessionRef.child('terminated').set({
-          terminated: true,
-          terminatedBy: currentUser.name,
-          terminatedAt: firebase.database.ServerValue.TIMESTAMP
+      // First preserve current participants
+      sessionRef.child('users').once('value').then(snapshot => {
+        const currentUsers = snapshot.val() || {};
+        
+        // Save participants data permanently
+        const participantsData = {};
+        Object.keys(currentUsers).forEach(userId => {
+          const user = currentUsers[userId];
+          participantsData[userId] = {
+            name: user.name || 'Unknown',
+            joinedAt: user.timestamp || Date.now()
+          };
+        });
+        
+        // Save the code and participants
+        return sessionRef.child('finalCode').set({
+          content: finalCode,
+          language: language,
+          savedAt: firebase.database.ServerValue.TIMESTAMP,
+          lineCount: finalCode.split('\n').length,
+          characterCount: finalCode.length,
+          savedBy: currentUser.name
+        }).then(() => {
+          // Save preserved participants
+          return sessionRef.child('preservedParticipants').set(participantsData);
+        }).then(() => {
+          // Then set the termination flag
+          return sessionRef.child('terminated').set({
+            terminated: true,
+            terminatedBy: currentUser.name,
+            terminatedAt: firebase.database.ServerValue.TIMESTAMP
+          });
         });
       }).then(function() {
-        console.log('Session terminated successfully with code saved');
+        console.log('Session terminated successfully with code and participants saved');
         
         // Show termination message to admin
         alert('Interview ended. Code has been saved. All participants have been disconnected.');
