@@ -1459,8 +1459,11 @@
     );
     
     // Fetch movies from Atomtickets API with timeout
+    // Use a proxy endpoint to hide the actual API URL
+    const apiEndpoint = window.MOVIE_API_ENDPOINT || '/api/movies' || 'data:application/json,{"productions":[]}';
+    
     Promise.race([
-      fetch('https://clientproxyservice.atomtickets.com/api/v1/aggregation/web-gateway'),
+      fetch(apiEndpoint),
       timeoutPromise
     ])
       .then(response => {
