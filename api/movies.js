@@ -18,8 +18,15 @@ export default async function handler(req, res) {
   
   try {
     // The actual API endpoint is stored in environment variable
-    const API_ENDPOINT = process.env.ATOMTICKETS_API_URL || 
-                        'https://clientproxyservice.atomtickets.com/api/v1/aggregation/web-gateway';
+    const API_ENDPOINT = process.env.ATOMTICKETS_API_URL;
+    
+    if (!API_ENDPOINT) {
+      // Return empty response if API not configured
+      return res.status(200).json({ 
+        productions: [],
+        message: 'Movie API not configured'
+      });
+    }
     
     const response = await fetch(API_ENDPOINT, {
       headers: {
