@@ -74,7 +74,7 @@
           return;
         }
         
-        // Initialize session tracking (IP, device, duplicate login check)
+        // Initialize session tracking for candidates only (IP, device, duplicate login check)
         if (window.SessionTracking) {
           candidateJoinBtn.textContent = 'Checking security...';
           const canProceed = await window.SessionTracking.initialize(sessionCode, 'candidate', name);
@@ -264,20 +264,7 @@
         `${interviewerName} (${currentUser.email})` : 
         currentUser.email || 'Interviewer';
       
-      // Initialize session tracking (IP, device tracking)
-      if (window.SessionTracking) {
-        createSessionBtn.disabled = true;
-        createSessionBtn.textContent = 'Initializing security...';
-        const canProceed = await window.SessionTracking.initialize(sessionCode, 'interviewer', adminName);
-        if (!canProceed) {
-          createSessionBtn.disabled = false;
-          createSessionBtn.textContent = 'Create New Session';
-          // Re-show dashboard
-          document.getElementById('adminDashboardModal').style.display = 'flex';
-          document.getElementById('activeSession').style.display = 'none';
-          return;
-        }
-      }
+      // No tracking for interviewers creating sessions
       
       // Start session - DON'T set sessionStarting here, let startSession handle it
       startSession(adminName, sessionCode, true);
@@ -295,18 +282,7 @@
           `${interviewerName} (${currentUser.email})` : 
           currentUser.email || 'Interviewer';
         
-        // Initialize session tracking (IP, device, duplicate login check)
-        if (window.SessionTracking) {
-          adminJoinBtn.disabled = true;
-          adminJoinBtn.textContent = 'Checking security...';
-          const canProceed = await window.SessionTracking.initialize(sessionCode, 'interviewer', adminName);
-          if (!canProceed) {
-            adminJoinBtn.disabled = false;
-            adminJoinBtn.textContent = 'Join Session';
-            return;
-          }
-          adminJoinBtn.textContent = 'Joining...';
-        }
+        // No tracking for interviewers joining sessions
         
         window.location.hash = sessionCode;
         startSession(adminName, sessionCode, false);

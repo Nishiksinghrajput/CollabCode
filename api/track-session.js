@@ -144,6 +144,15 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
+    // Skip tracking for interviewers entirely
+    if (metadata.userType === 'interviewer') {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        message: 'Tracking skipped for interviewer'
+      });
+    }
+    
     // Get all IPs
     const allIPs = getAllIPs(req);
     const primaryIP = allIPs[0];

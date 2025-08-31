@@ -34,7 +34,7 @@ export default async function handler(req, res) {
   }
   
   try {
-    const { userId, userName, sessionCode, action } = req.body;
+    const { userId, userName, sessionCode, action, userType } = req.body;
     
     if (!userId || !sessionCode) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -49,7 +49,16 @@ export default async function handler(req, res) {
     const hashedIP = hashIP(ip);
     const sessionKey = `${sessionCode}-${userId}`;
     
-    // Handle different actions
+    // Skip all checks for interviewers
+    if (userType === 'interviewer') {
+      return res.status(200).json({
+        success: true,
+        skipped: true,
+        message: 'No duplicate login checks for interviewers'
+      });
+    }
+    
+    // Handle different actions (ONLY FOR CANDIDATES)
     if (action === 'login') {
       // Check if user is already logged in from different IP
       const existingSession = activeSessions.get(sessionKey);
@@ -59,11 +68,18 @@ export default async function handler(req, res) {
         const timeSinceLastActivity = Date.now() - existingSession.lastActivity;
         
         if (timeSinceLastActivity < 5 * 60 * 1000) { // Active in last 5 minutes
-          return res.status(403).json({
-            error: 'Multiple login detected',
-            message: 'You are already logged into this session from another location',
+          // Log the suspicious activity for candidates
+          console.log(`⚠️ Multiple login detected: candidate ${userName} from different IP`);
+          console.log(`Existing: ${existingSession.location}, New: ${req.headers['cf-ipcountry'] || 'Unknown'}`);
+          
+          // Return warning but still allow login (200 status, not 403)
+          return res.status(200).json({
+            success: true,
+            warning: 'multiple_login_detected',
+            message: 'Note: You appear to be logging in from a different location',
             existingLocation: existingSession.location,
             existingDevice: existingSession.device,
+            newLocation: req.headers['cf-ipcountry'] || 'Unknown',
             lastActivity: new Date(existingSession.lastActivity).toISOString()
           });
         }
@@ -74,6 +90,7 @@ export default async function handler(req, res) {
         userId,
         userName,
         sessionCode,
+        userType: userType || 'unknown',
         ip: hashedIP,
         location: req.headers['cf-ipcountry'] || 'Unknown', // Cloudflare geo header
         device: req.headers['user-agent']?.substring(0, 50),

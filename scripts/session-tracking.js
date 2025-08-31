@@ -1,8 +1,14 @@
 // Session tracking module for IP, device, and security monitoring
 (function() {
   const SessionTracking = {
-    // Track session event (join, leave, etc.)
+    // Track session event (join, leave, etc.) - ONLY FOR CANDIDATES
     async trackEvent(sessionCode, userId, userName, eventType, metadata = {}) {
+      // Skip all tracking for interviewers
+      if (metadata?.userType === 'interviewer') {
+        console.log('Skipping tracking for interviewer:', userName);
+        return { success: true, skipped: true };
+      }
+      
       try {
         // Get client-side metadata
         const clientMetadata = {
@@ -46,12 +52,21 @@
             }
           }
           
-          // Show security warnings if any
+          // Log security warnings (don't show alerts)
           if (data.tracked.vpnDetected) {
-            console.warn('VPN/Proxy detected');
-            // Show alert to user if VPN is detected
-            if (eventType === 'join') {
-              alert('⚠️ VPN/Proxy detected. Your session is being monitored for security.');
+            console.warn('VPN/Proxy detected for', userName);
+            
+            // Store VPN detection as a security warning in Firebase
+            if (window.firebase && sessionCode) {
+              const vpnWarningRef = `sessions/${sessionCode}/security_warnings/vpn_${Date.now()}`;
+              firebase.database().ref(vpnWarningRef).set({
+                type: 'vpn_detected',
+                userId,
+                userName,
+                userType: metadata?.userType,
+                timestamp: Date.now(),
+                message: 'VPN/Proxy connection detected'
+              });
             }
           }
           
@@ -68,7 +83,7 @@
     },
 
     // Check for duplicate login
-    async checkDuplicateLogin(sessionCode, userId, userName, action = 'login') {
+    async checkDuplicateLogin(sessionCode, userId, userName, userType, action = 'login') {
       try {
         const response = await fetch('/api/check-duplicate-login', {
           method: 'POST',
@@ -79,20 +94,40 @@
             sessionCode,
             userId,
             userName,
+            userType,
             action
           })
         });
 
         const data = await response.json();
         
-        if (response.status === 403) {
-          // Multiple login detected
-          const message = `${data.message}\n\nLast active: ${data.lastActivity}\nLocation: ${data.existingLocation}\nDevice: ${data.existingDevice}`;
-          alert(message);
-          return false;
+        if (data.warning === 'multiple_login_detected') {
+          // Multiple login detected - show warning but don't block
+          console.warn('Multiple login detected:', data);
+          
+          // Store this as a security event in Firebase
+          if (window.firebase && sessionCode) {
+            const warningRef = `sessions/${sessionCode}/security_warnings/${Date.now()}`;
+            firebase.database().ref(warningRef).set({
+              type: 'multiple_login',
+              userId,
+              userName,
+              userType,
+              existingLocation: data.existingLocation,
+              newLocation: data.newLocation,
+              timestamp: Date.now(),
+              message: data.message
+            });
+          }
+          
+          // Show a subtle notification for candidates only
+          if (userType === 'candidate') {
+            console.log(`ℹ️ ${data.message}`);
+            // Could show a non-blocking toast notification here
+          }
         }
 
-        return true;
+        return true; // Always return true - we're not blocking anymore
       } catch (error) {
         console.error('Failed to check duplicate login:', error);
         // Don't block on error
@@ -101,7 +136,7 @@
     },
 
     // Send heartbeat to keep session alive
-    startHeartbeat(sessionCode, userId, userName) {
+    startHeartbeat(sessionCode, userId, userName, userType) {
       // Send heartbeat every 2 minutes
       const heartbeatInterval = setInterval(async () => {
         try {
@@ -114,6 +149,7 @@
               sessionCode,
               userId,
               userName,
+              userType,
               action: 'heartbeat'
             })
           });
@@ -135,14 +171,21 @@
             sessionCode,
             userId,
             userName,
+            userType,
             action: 'logout'
           })], { type: 'application/json' })
         );
       });
     },
 
-    // Initialize tracking for a session
+    // Initialize tracking for a session - ONLY FOR CANDIDATES
     async initialize(sessionCode, userType, userName) {
+      // Skip all initialization for interviewers
+      if (userType === 'interviewer') {
+        console.log('Skipping tracking initialization for interviewer:', userName);
+        return true; // Always allow interviewers
+      }
+      
       const userId = `${userType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Store tracking info
@@ -153,17 +196,17 @@
         userType
       };
 
-      // Check for duplicate login
-      const canProceed = await this.checkDuplicateLogin(sessionCode, userId, userName);
+      // Check for duplicate login (only for candidates)
+      const canProceed = await this.checkDuplicateLogin(sessionCode, userId, userName, userType);
       if (!canProceed) {
         return false;
       }
 
-      // Track join event
+      // Track join event (only for candidates)
       await this.trackEvent(sessionCode, userId, userName, 'join', { userType });
 
-      // Start heartbeat
-      this.startHeartbeat(sessionCode, userId, userName);
+      // Start heartbeat (only for candidates)
+      this.startHeartbeat(sessionCode, userId, userName, userType);
 
       return true;
     },
@@ -191,14 +234,25 @@
         const trackingRef = firebase.database().ref(`sessions/${sessionCode}/tracking`);
         const snapshot = await trackingRef.once('value');
         const trackingData = snapshot.val() || {};
+        
+        // Also fetch security warnings
+        const warningsRef = firebase.database().ref(`sessions/${sessionCode}/security_warnings`);
+        const warningsSnapshot = await warningsRef.once('value');
+        const warningsData = warningsSnapshot.val() || {};
 
         // Process tracking entries
         const entries = Object.values(trackingData);
+        const warnings = Object.values(warningsData);
         const participants = new Map();
         const securityAlerts = [];
         let vpnCount = 0;
+        let multipleLoginCount = 0;
+        let fraudRiskLevel = 'low'; // low, medium, high
 
         entries.forEach(entry => {
+          // Only process candidates
+          const isCandidate = entry.metadata?.userType === 'candidate';
+          
           // Group by user
           if (!participants.has(entry.userId)) {
             participants.set(entry.userId, {
@@ -211,11 +265,14 @@
               vpn: entry.vpn.isVPN,
               flags: entry.securityFlags || [],
               joinTime: entry.timestamp,
-              lastSeen: entry.timestamp
+              lastSeen: entry.timestamp,
+              fraudIndicators: [] // New field for fraud tracking
             });
 
-            if (entry.vpn.isVPN) {
+            // Count VPN usage for candidates only
+            if (isCandidate && entry.vpn.isVPN) {
               vpnCount++;
+              participants.get(entry.userId).fraudIndicators.push('VPN_DETECTED');
             }
           } else {
             // Update last seen
@@ -223,21 +280,62 @@
             participant.lastSeen = Math.max(participant.lastSeen, entry.timestamp);
           }
 
-          // Collect security alerts
-          if (entry.securityFlags && entry.securityFlags.length > 0) {
+          // Collect security alerts for candidates
+          if (isCandidate && entry.securityFlags && entry.securityFlags.length > 0) {
             entry.securityFlags.forEach(flag => {
               securityAlerts.push({
                 ...flag,
                 userName: entry.userName,
-                timestamp: entry.timestamp
+                timestamp: entry.timestamp,
+                userType: 'candidate'
               });
             });
           }
         });
 
+        // Process warnings (multiple logins, VPN detections, etc.)
+        warnings.forEach(warning => {
+          if (warning.userType === 'candidate') {
+            if (warning.type === 'multiple_login') {
+              multipleLoginCount++;
+              securityAlerts.push({
+                type: 'multiple_login',
+                severity: 'high',
+                detail: `Candidate ${warning.userName} logged in from multiple locations`,
+                userName: warning.userName,
+                timestamp: warning.timestamp,
+                existingLocation: warning.existingLocation,
+                newLocation: warning.newLocation
+              });
+            }
+            
+            if (warning.type === 'vpn_detected') {
+              securityAlerts.push({
+                type: 'vpn',
+                severity: 'medium',
+                detail: `VPN/Proxy detected for candidate ${warning.userName}`,
+                userName: warning.userName,
+                timestamp: warning.timestamp
+              });
+            }
+          }
+        });
+
+        // Calculate fraud risk level based on indicators
+        const totalWarnings = vpnCount + multipleLoginCount + (securityAlerts.length > 5 ? 1 : 0);
+        if (totalWarnings === 0) {
+          fraudRiskLevel = 'low';
+        } else if (totalWarnings <= 2) {
+          fraudRiskLevel = 'medium';
+        } else {
+          fraudRiskLevel = 'high';
+        }
+
         return {
           totalParticipants: participants.size,
           vpnUsers: vpnCount,
+          multipleLogins: multipleLoginCount,
+          fraudRiskLevel: fraudRiskLevel,
           participants: Array.from(participants.values()),
           securityAlerts: securityAlerts.sort((a, b) => b.timestamp - a.timestamp),
           rawData: entries
@@ -257,14 +355,50 @@
           return;
         }
 
-        // Update summary
+        // Determine fraud alert color and message
+        const fraudColors = {
+          low: '#00ff00',
+          medium: '#ffaa00',
+          high: '#ff0000'
+        };
+        const fraudBackgrounds = {
+          low: 'rgba(0,255,0,0.1)',
+          medium: 'rgba(255,170,0,0.2)',
+          high: 'rgba(255,0,0,0.3)'
+        };
+        const fraudMessages = {
+          low: '✓ No fraud indicators detected',
+          medium: '⚠️ Potential fraud indicators detected',
+          high: '🚨 HIGH FRAUD RISK - Multiple suspicious activities'
+        };
+
+        // Update summary with FRAUD RISK prominently displayed
         document.getElementById('security-tracking-data').innerHTML = `
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="background: ${fraudBackgrounds[data.fraudRiskLevel]}; 
+                      border: 2px solid ${fraudColors[data.fraudRiskLevel]}; 
+                      padding: 15px; 
+                      border-radius: 8px; 
+                      margin-bottom: 15px;
+                      text-align: center;">
+            <h3 style="color: ${fraudColors[data.fraudRiskLevel]}; margin: 0;">
+              FRAUD RISK: ${data.fraudRiskLevel.toUpperCase()}
+            </h3>
+            <p style="color: #fff; margin: 5px 0;">
+              ${fraudMessages[data.fraudRiskLevel]}
+            </p>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
             <div style="background: rgba(0,255,0,0.1); padding: 10px; border-radius: 5px;">
-              <strong>Total Participants:</strong> ${data.totalParticipants}
+              <strong>Candidates:</strong> ${data.participants.filter(p => p.type === 'candidate').length}
             </div>
-            <div style="background: ${data.vpnUsers > 0 ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,0,0.1)'}; padding: 10px; border-radius: 5px;">
+            <div style="background: ${data.vpnUsers > 0 ? 'rgba(255,0,0,0.2)' : 'rgba(0,255,0,0.1)'}; padding: 10px; border-radius: 5px;">
               <strong>VPN Users:</strong> ${data.vpnUsers}
+              ${data.vpnUsers > 0 ? '<br><small style="color: #ffaa00;">⚠️ Suspicious</small>' : ''}
+            </div>
+            <div style="background: ${data.multipleLogins > 0 ? 'rgba(255,0,0,0.2)' : 'rgba(0,255,0,0.1)'}; padding: 10px; border-radius: 5px;">
+              <strong>Multiple Logins:</strong> ${data.multipleLogins}
+              ${data.multipleLogins > 0 ? '<br><small style="color: #ff6666;">🚨 Fraud Alert</small>' : ''}
             </div>
             <div style="background: ${data.securityAlerts.length > 0 ? 'rgba(255,255,0,0.1)' : 'rgba(0,255,0,0.1)'}; padding: 10px; border-radius: 5px;">
               <strong>Security Alerts:</strong> ${data.securityAlerts.length}
@@ -272,35 +406,87 @@
           </div>
         `;
 
-        // Update participants table
+        // Update participants table - highlight candidates with issues
         const tbody = document.getElementById('participant-activity-body');
-        tbody.innerHTML = data.participants.map(p => `
-          <tr>
-            <td>${p.userName}</td>
+        tbody.innerHTML = data.participants.map(p => {
+          const isCandidate = p.type === 'candidate';
+          const hasIssues = p.vpn || (p.fraudIndicators && p.fraudIndicators.length > 0);
+          const rowStyle = isCandidate && hasIssues ? 
+            'background: rgba(255,0,0,0.1); border-left: 3px solid #ff0000;' : '';
+          
+          return `
+          <tr style="${rowStyle}">
+            <td>
+              ${p.userName}
+              ${isCandidate ? '<br><small style="color: #888;">(Candidate)</small>' : ''}
+            </td>
             <td>${p.type}</td>
             <td>${p.location}</td>
             <td>${p.device}</td>
             <td style="font-family: monospace; font-size: 10px;">${p.ipHash.substring(0, 8)}...</td>
             <td>
-              ${p.vpn ? '<span class="security-flag vpn">VPN</span>' : ''}
-              ${p.flags.length > 0 ? p.flags.map(f => 
+              ${isCandidate && p.vpn ? '<span class="security-flag vpn">VPN</span>' : ''}
+              ${isCandidate && p.fraudIndicators && p.fraudIndicators.length > 0 ? 
+                '<span class="security-flag suspicious">FRAUD RISK</span>' : ''}
+              ${isCandidate && p.flags.length > 0 ? p.flags.map(f => 
                 `<span class="security-flag ${f.severity}">${f.type.replace(/_/g, ' ')}</span>`
-              ).join('') : '<span style="color: #00ff00;">✓ Clean</span>'}
+              ).join('') : ''}
+              ${isCandidate && !hasIssues ? '<span style="color: #00ff00;">✓ Clean</span>' : ''}
+              ${!isCandidate ? '<span style="color: #666;">Not tracked</span>' : ''}
             </td>
           </tr>
-        `).join('');
+        `}).join('');
 
-        // Update security alerts
+        // Update security alerts with detailed fraud information
         const alertsList = document.getElementById('security-alerts-list');
         if (data.securityAlerts.length === 0) {
-          alertsList.innerHTML = '<li class="info">No security alerts detected</li>';
+          alertsList.innerHTML = '<li class="info">✓ No fraud indicators or security alerts detected for candidates</li>';
         } else {
-          alertsList.innerHTML = data.securityAlerts.map(alert => `
-            <li class="${alert.severity}">
-              <strong>${alert.userName}:</strong> ${alert.detail}
-              <br><small>${new Date(alert.timestamp).toLocaleString()}</small>
+          alertsList.innerHTML = `
+            <li style="background: ${fraudBackgrounds[data.fraudRiskLevel]}; 
+                       border-left: 4px solid ${fraudColors[data.fraudRiskLevel]}; 
+                       padding: 12px; margin-bottom: 10px;">
+              <strong style="color: ${fraudColors[data.fraudRiskLevel]};">
+                FRAUD ASSESSMENT: ${data.fraudRiskLevel.toUpperCase()} RISK
+              </strong>
+              <br>
+              <small>Based on ${data.securityAlerts.length} security indicator(s) from candidate activity</small>
             </li>
-          `).join('');
+            ${data.securityAlerts.map(alert => {
+              const alertStyle = alert.severity === 'high' ? 
+                'background: rgba(255,0,0,0.15); border-left-color: #ff0000;' :
+                alert.severity === 'medium' ? 
+                'background: rgba(255,170,0,0.15); border-left-color: #ffaa00;' :
+                'background: rgba(0,100,255,0.1); border-left-color: #0064ff;';
+              
+              let detailHtml = `<strong>Candidate: ${alert.userName}</strong><br>`;
+              
+              if (alert.type === 'multiple_login') {
+                detailHtml += `
+                  <span style="color: #ff6666;">🚨 FRAUD WARNING: Multiple Login Detected</span><br>
+                  <small>
+                    • Original Location: ${alert.existingLocation || 'Unknown'}<br>
+                    • New Location: ${alert.newLocation || 'Unknown'}<br>
+                    • Potential account sharing or fraudulent access
+                  </small>
+                `;
+              } else if (alert.type === 'vpn') {
+                detailHtml += `
+                  <span style="color: #ffaa00;">⚠️ VPN/Proxy Connection Detected</span><br>
+                  <small>• Candidate is masking their real location</small>
+                `;
+              } else {
+                detailHtml += `${alert.detail}`;
+              }
+              
+              return `
+                <li style="${alertStyle}">
+                  ${detailHtml}
+                  <br><small style="color: #888;">Detected at: ${new Date(alert.timestamp).toLocaleString()}</small>
+                </li>
+              `;
+            }).join('')}
+          `;
         }
       });
     }
