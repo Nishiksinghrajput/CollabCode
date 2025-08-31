@@ -488,6 +488,132 @@
             }).join('')}
           `;
         }
+        
+        // Add detailed tracking information in a fun format
+        const detailedInfo = document.getElementById('detailed-tracking-info');
+        if (detailedInfo) {
+          const candidates = data.participants.filter(p => p.type === 'candidate');
+          
+          if (candidates.length === 0) {
+            detailedInfo.innerHTML = '<p style="color: #666; text-align: center;">No candidate tracking data available</p>';
+          } else {
+            detailedInfo.innerHTML = candidates.map(candidate => {
+              const joinTime = new Date(candidate.joinTime);
+              const lastSeen = new Date(candidate.lastSeen);
+              const duration = Math.floor((lastSeen - joinTime) / 1000 / 60); // minutes
+              
+              // Fun device emoji based on device type
+              const deviceEmoji = candidate.device.toLowerCase().includes('mobile') ? '📱' :
+                                 candidate.device.toLowerCase().includes('tablet') ? '📱' : '💻';
+              
+              // Location emoji based on country
+              const locationEmoji = '🌍';
+              
+              // VPN status with emoji
+              const vpnStatus = candidate.vpn ? 
+                '🔒 VPN/Proxy ACTIVE (Location Hidden)' : 
+                '✅ Direct Connection (No VPN)';
+              
+              const vpnColor = candidate.vpn ? '#ff6666' : '#00ff00';
+              
+              // Create tracking notes
+              const trackingNotes = [];
+              if (candidate.vpn) {
+                trackingNotes.push('⚠️ Using VPN to hide real location');
+              }
+              if (candidate.fraudIndicators && candidate.fraudIndicators.includes('VPN_DETECTED')) {
+                trackingNotes.push('🚨 Potential fraud: Location masking detected');
+              }
+              
+              // Fun session summary
+              return `
+                <div style="background: rgba(0,0,0,0.3); 
+                           border: 1px solid #444; 
+                           border-radius: 8px; 
+                           padding: 15px; 
+                           margin-bottom: 15px;">
+                  
+                  <h5 style="color: #00ff00; margin: 0 0 10px 0;">
+                    👤 Candidate: ${candidate.userName}
+                  </h5>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    
+                    <div style="background: rgba(0,100,255,0.1); padding: 8px; border-radius: 4px;">
+                      <strong>📅 Login Details:</strong><br>
+                      <small>
+                        • First Login: ${joinTime.toLocaleTimeString()}<br>
+                        • Last Active: ${lastSeen.toLocaleTimeString()}<br>
+                        • Session Duration: ${duration} minutes<br>
+                        • Session ID: ${candidate.userId.substring(0, 8)}...
+                      </small>
+                    </div>
+                    
+                    <div style="background: rgba(0,255,0,0.1); padding: 8px; border-radius: 4px;">
+                      <strong>${deviceEmoji} Device Info:</strong><br>
+                      <small>
+                        • Browser: ${candidate.device}<br>
+                        • IP Hash: <code>${candidate.ipHash.substring(0, 12)}...</code><br>
+                        • Type: ${deviceEmoji === '📱' ? 'Mobile Device' : 'Desktop/Laptop'}
+                      </small>
+                    </div>
+                    
+                    <div style="background: rgba(255,170,0,0.1); padding: 8px; border-radius: 4px;">
+                      <strong>${locationEmoji} Location:</strong><br>
+                      <small>
+                        • Location: ${candidate.location}<br>
+                        • Status: <span style="color: ${vpnColor}">${vpnStatus}</span>
+                      </small>
+                    </div>
+                    
+                    <div style="background: ${candidate.vpn ? 'rgba(255,0,0,0.1)' : 'rgba(0,255,0,0.1)'}; 
+                               padding: 8px; 
+                               border-radius: 4px;">
+                      <strong>🔐 VPN Detection:</strong><br>
+                      <small>
+                        ${candidate.vpn ? 
+                          `<span style="color: #ff6666;">
+                            • VPN/Proxy: DETECTED ⚠️<br>
+                            • Real Location: HIDDEN<br>
+                            • Trust Level: LOW
+                          </span>` : 
+                          `<span style="color: #00ff00;">
+                            • VPN/Proxy: Not Detected ✓<br>
+                            • Location: Verified<br>
+                            • Trust Level: HIGH
+                          </span>`
+                        }
+                      </small>
+                    </div>
+                    
+                  </div>
+                  
+                  ${trackingNotes.length > 0 ? `
+                    <div style="background: rgba(255,0,0,0.1); 
+                               padding: 10px; 
+                               margin-top: 10px; 
+                               border-radius: 4px;
+                               border-left: 3px solid #ff6666;">
+                      <strong>📝 Tracking Notes:</strong><br>
+                      ${trackingNotes.map(note => `<small>• ${note}</small>`).join('<br>')}
+                    </div>
+                  ` : `
+                    <div style="background: rgba(0,255,0,0.1); 
+                               padding: 10px; 
+                               margin-top: 10px; 
+                               border-radius: 4px;
+                               border-left: 3px solid #00ff00;">
+                      <strong>📝 Tracking Notes:</strong><br>
+                      <small>• ✅ No suspicious activity detected</small><br>
+                      <small>• ✅ Clean session with verified location</small>
+                    </div>
+                  `}
+                  
+                </div>
+              `;
+            }).join('');
+          }
+        }
       });
     }
   };
