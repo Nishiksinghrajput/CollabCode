@@ -74,15 +74,11 @@
           return;
         }
         
-        // Initialize session tracking for candidates only (IP, device, duplicate login check)
+        // Initialize session tracking for candidates (make it async/non-blocking)
         if (window.SessionTracking) {
-          candidateJoinBtn.textContent = 'Checking security...';
-          const canProceed = await window.SessionTracking.initialize(sessionCode, 'candidate', name);
-          if (!canProceed) {
-            candidateJoinBtn.disabled = false;
-            candidateJoinBtn.textContent = 'Join Session';
-            return;
-          }
+          // Don't await - let tracking happen in background
+          window.SessionTracking.initialize(sessionCode, 'candidate', name);
+          // Remove the security check message - just proceed
         }
         
         Auth.joinAsCandidate(name);
@@ -738,6 +734,24 @@
           ${users.length === 0 ? '<div style="color: #666;">No participants</div>' : ''}
         `;
         
+        // Check for fraud indicators from security warnings
+        let fraudBadge = '';
+        if (fullSession && fullSession.security_warnings) {
+          const warnings = Object.values(fullSession.security_warnings || {});
+          const candidateWarnings = warnings.filter(w => w.userType === 'candidate');
+          
+          if (candidateWarnings.length > 0) {
+            const hasVPN = candidateWarnings.some(w => w.type === 'vpn_detected');
+            const hasMultipleLogin = candidateWarnings.some(w => w.type === 'multiple_login');
+            
+            if (hasMultipleLogin) {
+              fraudBadge = '<span class="fraud-badge" style="background: #ff0000; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">🚨 FRAUD</span>';
+            } else if (hasVPN) {
+              fraudBadge = '<span class="fraud-badge" style="background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-left: 4px;">⚠️ VPN</span>';
+            }
+          }
+        }
+        
         // Determine session status - Simple progression: Active -> In Progress -> Ended
         let status = 'active';
         let statusBadge = '';
@@ -745,15 +759,15 @@
         if (session.isTerminated) {
           // Session has ended
           status = 'ended';
-          statusBadge = '<span class="status-badge status-ended" style="background-color: #666;">Ended</span>';
+          statusBadge = '<span class="status-badge status-ended" style="background-color: #666;">Ended</span>' + fraudBadge;
         } else if (candidates.length > 0 && interviewers.length > 0) {
           // Both candidate and interviewer present - interview in progress
           status = 'in-progress';
-          statusBadge = '<span class="status-badge status-in-progress" style="background-color: #2196f3;">In Progress</span>';
+          statusBadge = '<span class="status-badge status-in-progress" style="background-color: #2196f3;">In Progress</span>' + fraudBadge;
         } else {
           // Session created but interview not started yet
           status = 'active';
-          statusBadge = '<span class="status-badge status-active" style="background-color: #4caf50;">Active</span>';
+          statusBadge = '<span class="status-badge status-active" style="background-color: #4caf50;">Active</span>' + fraudBadge;
         }
         
         // Format time
