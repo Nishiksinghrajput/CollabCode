@@ -178,8 +178,14 @@
       const scoreEmoji = activitySummary.activityScore > 80 ? '✅' : 
                          activitySummary.activityScore > 60 ? '⚠️' : '🚨';
       
+      // Handle different field names from Firebase vs in-memory
+      const totalIdleSeconds = activitySummary.totalIdleSeconds || activitySummary.totalIdleTime || 0;
+      const sessionDurationSeconds = activitySummary.sessionDuration || (activitySummary.sessionDurationMinutes * 60) || 0;
+      const sessionDurationMinutes = Math.round(sessionDurationSeconds / 60);
+      
       // Calculate idle percentage
-      const idlePercentage = Math.round((activitySummary.totalIdleSeconds / (activitySummary.sessionDurationMinutes * 60)) * 100);
+      const idlePercentage = sessionDurationSeconds > 0 ? 
+        Math.round((totalIdleSeconds / sessionDurationSeconds) * 100) : 0;
       
       activitySection = `
         <div style="margin-top: 10px; padding: 8px; background: rgba(66,165,245,0.1); border-radius: 4px;">
@@ -187,10 +193,10 @@
           <div>Engagement Level: ${scoreEmoji} ${engagementLevel} (Score: ${activitySummary.activityScore}/100)</div>
           <div>• Tab Switches: ${activitySummary.tabSwitches} ${activitySummary.tabSwitches > 10 ? '⚠️ (High)' : ''}</div>
           <div>• Idle Periods: ${activitySummary.idlePeriods} times</div>
-          <div>• Total Idle Time: ${Math.round(activitySummary.totalIdleSeconds / 60)} min (${idlePercentage}% of session)</div>
-          ${activitySummary.suspiciousPatterns && activitySummary.suspiciousPatterns.length > 0 ? 
-            `<div>• Notable Behaviors: ${activitySummary.suspiciousPatterns.length} detected</div>` : ''}
-          <div>• Session Duration: ${activitySummary.sessionDurationMinutes} minutes</div>
+          <div>• Total Idle Time: ${Math.round(totalIdleSeconds / 60)} min (${idlePercentage}% of session)</div>
+          ${activitySummary.suspiciousPatterns && activitySummary.suspiciousPatterns > 0 ? 
+            `<div>• Notable Behaviors: ${activitySummary.suspiciousPatterns} detected</div>` : ''}
+          <div>• Session Duration: ${sessionDurationMinutes} minutes</div>
         </div>
       `;
     }
@@ -255,8 +261,14 @@
       const activityColor = activitySummary.activityScore > 80 ? '#4caf50' :
                            activitySummary.activityScore > 60 ? '#ff9800' : '#ff0000';
       
+      // Handle different field names from Firebase vs in-memory
+      const totalIdleSeconds = activitySummary.totalIdleSeconds || activitySummary.totalIdleTime || 0;
+      const sessionDurationSeconds = activitySummary.sessionDuration || (activitySummary.sessionDurationMinutes * 60) || 0;
+      const sessionDurationMinutes = Math.round(sessionDurationSeconds / 60);
+      
       // Calculate idle percentage
-      const idlePercentage = Math.round((activitySummary.totalIdleSeconds / (activitySummary.sessionDurationMinutes * 60)) * 100);
+      const idlePercentage = sessionDurationSeconds > 0 ? 
+        Math.round((totalIdleSeconds / sessionDurationSeconds) * 100) : 0;
       
       // Determine engagement emoji and text
       let engagementEmoji = '✅';
@@ -268,6 +280,11 @@
         engagementEmoji = '⚠️';
         engagementText = 'Medium Engagement';
       }
+      
+      // Handle suspicious patterns - could be array or number
+      const suspiciousCount = Array.isArray(activitySummary.suspiciousPatterns) ? 
+        activitySummary.suspiciousPatterns.length : 
+        (activitySummary.suspiciousPatterns || 0);
       
       slackPayload.attachments.push({
         color: activityColor,
@@ -290,7 +307,7 @@
           },
           {
             title: "Idle Time",
-            value: `${Math.round(activitySummary.totalIdleSeconds / 60)}min (${idlePercentage}%)`,
+            value: `${Math.round(totalIdleSeconds / 60)}min (${idlePercentage}%)`,
             short: true
           },
           {
@@ -300,12 +317,12 @@
           },
           {
             title: "Session Duration",
-            value: `${activitySummary.sessionDurationMinutes} min`,
+            value: `${sessionDurationMinutes} min`,
             short: true
           }
         ],
-        footer: activitySummary.suspiciousPatterns && activitySummary.suspiciousPatterns.length > 0 ? 
-                `⚠️ ${activitySummary.suspiciousPatterns.length} notable behaviors detected` : 
+        footer: suspiciousCount > 0 ? 
+                `⚠️ ${suspiciousCount} notable behaviors detected` : 
                 "✅ Normal activity patterns"
       });
     }
