@@ -399,10 +399,8 @@
           
           <div class="session-detail-tabs">
             <button class="detail-tab active" data-tab="notes">📝 Notes</button>
-            <button class="detail-tab" data-tab="code">💻 Code</button>
-            <button class="detail-tab" data-tab="info">ℹ️ Info</button>
-            <button class="detail-tab" data-tab="security">🔒 Security</button>
-            <button class="detail-tab" data-tab="activity">📊 Activity</button>
+            <button class="detail-tab" data-tab="info">ℹ️ Session Info</button>
+            <button class="detail-tab" data-tab="activity">📊 Candidate Behavior</button>
           </div>
           
           <div class="tab-content" id="notes-tab" style="display: block;">
@@ -423,62 +421,27 @@
             </div>
           </div>
           
-          <div class="tab-content" id="code-tab" style="display: none;">
-            <div id="session-code-viewer" style="height: 400px; border: 1px solid #444;"></div>
-          </div>
           
           <div class="tab-content" id="info-tab" style="display: none;">
-            <div class="session-info-display">
-              <p><strong>Created:</strong> <span id="display-created"></span></p>
-              <p><strong>Duration:</strong> <span id="display-duration"></span></p>
-              <p><strong>Participants:</strong> <span id="display-participants"></span></p>
-              <p><strong>Status:</strong> <span id="display-status"></span></p>
+            <div class="session-info-display" style="padding: 20px;">
+              <h4>📅 Session Details</h4>
+              <div style="display: grid; grid-template-columns: 150px 1fr; gap: 15px; margin-top: 15px;">
+                <strong>Session Code:</strong> <span id="detail-session-code" style="font-family: monospace; color: #42a5f5;"></span>
+                <strong>Status:</strong> <span id="display-status"></span>
+                <strong>Started:</strong> <span id="display-created"></span>
+                <strong>Duration:</strong> <span id="display-duration"></span>
+                <strong>Participants:</strong> <span id="display-participants"></span>
+              </div>
             </div>
           </div>
           
-          <div class="tab-content" id="security-tab" style="display: none;">
-            <div class="security-info-display">
-              <h4>🔍 Session Security & Tracking</h4>
-              <div id="security-tracking-data">
-                <p class="loading-message">Loading security data...</p>
-              </div>
-              
-              <h4>👥 Participant Activity</h4>
-              <div id="participant-activity">
-                <table class="security-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Type</th>
-                      <th>Location</th>
-                      <th>Device</th>
-                      <th>IP Hash</th>
-                      <th>Flags</th>
-                    </tr>
-                  </thead>
-                  <tbody id="participant-activity-body">
-                    <!-- Will be populated dynamically -->
-                  </tbody>
-                </table>
-              </div>
-              
-              <h4>📋 Tracking Notes & Suspicious Activity</h4>
-              <div id="security-alerts">
-                <ul id="security-alerts-list">
-                  <!-- Will be populated dynamically with tracking notes -->
-                </ul>
-              </div>
-              
-              <h4>🔍 Detailed Login & Device Information</h4>
-              <div id="detailed-tracking-info">
-                <!-- Will be populated with fun detailed view -->
-              </div>
-            </div>
-          </div>
           
           <div class="tab-content" id="activity-tab" style="display: none;">
             <div class="activity-info-display" style="padding: 20px;">
-              <h4>📊 Candidate Activity Analysis</h4>
+              <h4>📊 Candidate Behavior Monitoring</h4>
+              <div style="background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                <small style="color: #ffc107;">⚠️ This data is collected only when candidates consent to activity monitoring</small>
+              </div>
               <div id="activity-tracking-data">
                 <p class="loading-message">Loading activity data...</p>
               </div>

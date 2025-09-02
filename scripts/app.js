@@ -1256,65 +1256,103 @@
           const scoreColor = activityData.activityScore > 80 ? '#4caf50' : 
                            activityData.activityScore > 60 ? '#ff9800' : '#ff4444';
           
+          // Calculate engagement level
+          let engagementLevel = 'High';
+          let engagementColor = '#4caf50';
+          if (activityData.activityScore < 60) {
+            engagementLevel = 'Low';
+            engagementColor = '#ff4444';
+          } else if (activityData.activityScore < 80) {
+            engagementLevel = 'Medium';
+            engagementColor = '#ff9800';
+          }
+          
           container.innerHTML = `
             <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                  <h3 style="margin: 0; font-size: 24px;">Activity Score</h3>
-                  <div style="font-size: 48px; font-weight: bold; color: ${scoreColor}; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                    ${activityData.activityScore || 0}%
+                  <h3 style="margin: 0; font-size: 20px; opacity: 0.9;">Engagement Level</h3>
+                  <div style="font-size: 36px; font-weight: bold; color: ${engagementColor}; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    ${engagementLevel}
+                  </div>
+                  <div style="font-size: 14px; opacity: 0.7; margin-top: 5px;">
+                    Based on activity patterns
                   </div>
                 </div>
                 <div style="text-align: right;">
                   <div style="font-size: 14px; opacity: 0.9;">Session Duration</div>
                   <div style="font-size: 20px; font-weight: bold;">${activityData.sessionDurationMinutes || 0} min</div>
+                  <div style="font-size: 12px; opacity: 0.7; margin-top: 5px;">
+                    Score: ${activityData.activityScore || 0}/100
+                  </div>
                 </div>
               </div>
             </div>
             
+            <h4 style="margin-bottom: 15px; color: #666;">📊 Behavior Metrics</h4>
+            
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #42a5f5;">
-                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Tab Switches</div>
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${activityData.tabSwitches > 10 ? '#ff9800' : '#42a5f5'};">
+                <div style="color: #666; font-size: 12px; margin-bottom: 5px;">🔄 TAB SWITCHES</div>
                 <div style="font-size: 24px; font-weight: bold; color: ${activityData.tabSwitches > 10 ? '#ff9800' : '#333'};">
                   ${activityData.tabSwitches || 0}
                 </div>
+                <div style="font-size: 11px; color: #999; margin-top: 5px;">
+                  ${activityData.tabSwitches > 10 ? 'High (may indicate looking up answers)' : 
+                    activityData.tabSwitches > 5 ? 'Moderate' : 'Normal'}
+                </div>
               </div>
               
-              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #66bb6a;">
-                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Idle Periods</div>
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${activityData.idlePeriods > 5 ? '#ff9800' : '#66bb6a'};">
+                <div style="color: #666; font-size: 12px; margin-bottom: 5px;">⏸️ IDLE PERIODS</div>
                 <div style="font-size: 24px; font-weight: bold; color: #333;">
                   ${activityData.idlePeriods || 0}
+                </div>
+                <div style="font-size: 11px; color: #999; margin-top: 5px;">
+                  Times inactive for >1 minute
                 </div>
               </div>
               
               <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ffa726;">
-                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Total Idle Time</div>
+                <div style="color: #666; font-size: 12px; margin-bottom: 5px;">⏱️ TOTAL IDLE TIME</div>
                 <div style="font-size: 24px; font-weight: bold; color: #333;">
-                  ${activityData.totalIdleSeconds || 0}s
+                  ${Math.round((activityData.totalIdleSeconds || 0) / 60)} min
+                </div>
+                <div style="font-size: 11px; color: #999; margin-top: 5px;">
+                  ${Math.round(((activityData.totalIdleSeconds || 0) / ((activityData.sessionDurationMinutes || 1) * 60)) * 100)}% of session
                 </div>
               </div>
             </div>
             
             ${activityData.suspiciousPatterns && activityData.suspiciousPatterns.length > 0 ? `
               <div style="background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; padding: 15px; margin-top: 20px;">
-                <h4 style="color: #ff9800; margin-top: 0;">⚠️ Suspicious Patterns Detected</h4>
+                <h4 style="color: #ff9800; margin-top: 0;">⚠️ Notable Behaviors</h4>
                 <ul style="margin: 10px 0;">
-                  ${activityData.suspiciousPatterns.map(p => `
-                    <li style="color: #666; margin: 5px 0;">
-                      ${p.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
-                      ${p.duration ? `(${Math.round(p.duration/1000)}s)` : ''}
-                      ${p.size ? `(${p.size} chars)` : ''}
-                    </li>
-                  `).join('')}
+                  ${activityData.suspiciousPatterns.map(p => {
+                    let description = '';
+                    if (p.type === 'quick_tab_switch') {
+                      description = '• Quick tab switch (returned in < 5 seconds)';
+                    } else if (p.type === 'switch_and_paste') {
+                      description = `• Pasted content after switching tabs ${p.size ? `(${p.size} characters)` : ''}`;
+                    } else {
+                      description = `• ${p.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+                    }
+                    return `<li style="color: #666; margin: 5px 0; list-style: none;">${description}</li>`;
+                  }).join('')}
                 </ul>
               </div>
             ` : ''}
             
-            ${activityData.finalReport ? `
-              <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border-radius: 4px; text-align: center; color: #2e7d32;">
-                ✅ Final activity report saved at session end
-              </div>
-            ` : ''}
+            <div style="background: #e3f2fd; border-radius: 8px; padding: 15px; margin-top: 20px;">
+              <h5 style="margin-top: 0; color: #1976d2;">ℹ️ Understanding the Metrics</h5>
+              <ul style="font-size: 12px; color: #666; margin: 10px 0; padding-left: 20px;">
+                <li><strong>Engagement Level:</strong> Overall assessment based on activity patterns (High/Medium/Low)</li>
+                <li><strong>Tab Switches:</strong> Number of times candidate switched away from the interview tab</li>
+                <li><strong>Idle Periods:</strong> Number of times candidate was inactive for more than 1 minute</li>
+                <li><strong>Score:</strong> 0-100 score calculated from behavior patterns (100 = perfect engagement)</li>
+              </ul>
+              <small style="color: #999;">Note: These metrics are indicators only and should be considered alongside interview performance.</small>
+            </div>
           `;
         })
         .catch(error => {
