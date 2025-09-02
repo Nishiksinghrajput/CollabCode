@@ -266,7 +266,11 @@
         `${interviewerName} (${currentUser.email})` : 
         currentUser.email || 'Interviewer';
       
-      // No tracking for interviewers creating sessions
+      // Initialize activity monitor in observer mode for interviewer
+      if (window.initActivityMonitor) {
+        console.log('Starting activity monitor in observer mode for interviewer');
+        window.initActivityMonitor(sessionCode, adminName, 'interviewer');
+      }
       
       // Start session - DON'T set sessionStarting here, let startSession handle it
       startSession(adminName, sessionCode, true);
@@ -284,7 +288,11 @@
           `${interviewerName} (${currentUser.email})` : 
           currentUser.email || 'Interviewer';
         
-        // No tracking for interviewers joining sessions
+        // Initialize activity monitor in observer mode for interviewer
+        if (window.initActivityMonitor) {
+          console.log('Starting activity monitor in observer mode for interviewer');
+          window.initActivityMonitor(sessionCode, adminName, 'interviewer');
+        }
         
         window.location.hash = sessionCode;
         startSession(adminName, sessionCode, false);

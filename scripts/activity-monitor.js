@@ -20,26 +20,56 @@
   
   // Initialize monitoring
   window.initActivityMonitor = function(session, user, type) {
-    // Only monitor candidates
-    if (type === 'interviewer') {
-      console.log('Activity monitoring skipped for interviewer');
-      return;
-    }
-    
-    monitoring = true;
     sessionCode = session;
     userId = user;
     userType = type;
-    metrics.sessionStart = Date.now();
     
-    console.log('Activity monitoring started for:', user);
-    
-    // Start monitoring
-    setupVisibilityTracking();
-    setupIdleDetection();
-    setupActivityTracking();
-    reportMetricsPeriodically();
+    // For candidates, track their activity
+    if (type === 'candidate') {
+      monitoring = true;
+      metrics.sessionStart = Date.now();
+      console.log('Activity monitoring started for candidate:', user);
+      
+      // Start monitoring
+      setupVisibilityTracking();
+      setupIdleDetection();
+      setupActivityTracking();
+      reportMetricsPeriodically();
+    } 
+    // For interviewers, just listen to activity updates from Firebase
+    else if (type === 'interviewer') {
+      console.log('Activity monitoring in observer mode for interviewer');
+      listenToActivityUpdates();
+    }
   };
+  
+  // Listen to activity updates from Firebase (for interviewers)
+  function listenToActivityUpdates() {
+    if (!window.firebase || !sessionCode) return;
+    
+    // Listen to activity summary updates
+    firebase.database()
+      .ref(`sessions/${sessionCode}/activity_summary`)
+      .on('value', function(snapshot) {
+        const summary = snapshot.val();
+        if (summary && window.updateActivityDashboard) {
+          window.updateActivityDashboard(summary);
+        }
+      });
+    
+    // Listen to alerts
+    firebase.database()
+      .ref(`sessions/${sessionCode}/activity_log`)
+      .orderByChild('timestamp')
+      .limitToLast(10)
+      .on('child_added', function(snapshot) {
+        const event = snapshot.val();
+        if (event && event.type === 'alert_triggered') {
+          console.log('Activity alert:', event.message);
+          // Could show a toast notification here
+        }
+      });
+  }
   
   // 1. VISIBILITY API - This actually works!
   function setupVisibilityTracking() {
@@ -347,11 +377,11 @@
   
   // 10. Update interviewer UI
   window.updateActivityDashboard = function(summary) {
+    // Update the dashboard in notes panel
     const dashboard = document.getElementById('activity-dashboard');
-    if (!dashboard) return;
-    
-    dashboard.style.display = 'block';
-    dashboard.innerHTML = `
+    if (dashboard) {
+      dashboard.style.display = 'block';
+      dashboard.innerHTML = `
       <div class="activity-summary">
         <h4>Candidate Activity Monitor</h4>
         <div class="activity-metrics">
@@ -379,7 +409,69 @@
         ` : ''}
       </div>
     `;
+    }
+    
+    // Also create/update a floating indicator for interviewers
+    createFloatingIndicator(summary);
   };
+  
+  // Create a floating activity indicator that's always visible
+  function createFloatingIndicator(summary) {
+    // Only show for interviewers
+    const user = window.Auth && window.Auth.getCurrentUser();
+    if (!user || !user.isAdmin) return;
+    
+    let indicator = document.getElementById('floating-activity-indicator');
+    if (!indicator) {
+      // Create the floating indicator
+      indicator = document.createElement('div');
+      indicator.id = 'floating-activity-indicator';
+      indicator.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(30, 30, 30, 0.95);
+        border: 1px solid rgba(66, 165, 245, 0.3);
+        border-radius: 8px;
+        padding: 12px;
+        min-width: 200px;
+        z-index: 1000;
+        font-family: monospace;
+        font-size: 12px;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(indicator);
+    }
+    
+    // Color based on activity score
+    const scoreColor = summary.activityScore > 80 ? '#4caf50' : 
+                      summary.activityScore > 60 ? '#ff9800' : '#ff4444';
+    
+    indicator.innerHTML = `
+      <div style="font-weight: bold; margin-bottom: 8px; color: #42a5f5;">
+        📊 Candidate Activity
+      </div>
+      <div style="display: grid; grid-template-columns: auto auto; gap: 4px 12px; font-size: 11px;">
+        <span style="color: #999;">Score:</span>
+        <span style="color: ${scoreColor}; font-weight: bold;">${summary.activityScore}%</span>
+        
+        <span style="color: #999;">Tab Switches:</span>
+        <span style="color: ${summary.tabSwitches > 10 ? '#ff9800' : '#fff'};">${summary.tabSwitches}</span>
+        
+        <span style="color: #999;">Idle:</span>
+        <span>${summary.idlePeriods} periods</span>
+        
+        ${summary.suspiciousPatterns > 0 ? `
+          <span style="color: #ff9800;">⚠️ Suspicious:</span>
+          <span style="color: #ff9800;">${summary.suspiciousPatterns}</span>
+        ` : ''}
+      </div>
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 10px; color: #666;">
+        Session: ${summary.sessionDurationMinutes} min
+      </div>
+    `;
+  }
   
   console.log('Activity Monitor module loaded - using reliable browser APIs');
 })();
