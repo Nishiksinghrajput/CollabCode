@@ -7,6 +7,10 @@
   let userId = null;
   let userType = null;
   
+  // Idle detection state (moved to module scope)
+  let isIdle = false;
+  let idleStartTime = null;
+  
   // Metrics
   let metrics = {
     tabSwitches: 0,
@@ -137,7 +141,6 @@
   // 2. IDLE DETECTION - Using mouse/keyboard activity
   function setupIdleDetection() {
     let idleTimer = null;
-    let isIdle = false;
     const IDLE_THRESHOLD = 60000; // 1 minute
     
     function resetIdleTimer() {
@@ -146,18 +149,25 @@
       clearTimeout(idleTimer);
       
       if (isIdle) {
+        // User was idle and is now active again
         isIdle = false;
-        const idleDuration = Date.now() - metrics.lastActiveTime;
-        metrics.totalIdleTime += idleDuration;
-        console.log('Activity resumed after idle:', Math.round(idleDuration / 1000), 'seconds');
+        if (idleStartTime) {
+          const idleDuration = Date.now() - idleStartTime;
+          metrics.totalIdleTime += idleDuration;
+          console.log('Activity resumed after idle:', Math.round(idleDuration / 1000), 'seconds');
+          console.log('Total idle time so far:', Math.round(metrics.totalIdleTime / 1000), 'seconds');
+        }
+        idleStartTime = null;
       }
       
       metrics.lastActiveTime = Date.now();
       
       idleTimer = setTimeout(function() {
+        // User has become idle
         isIdle = true;
+        idleStartTime = Date.now();
         metrics.idlePeriods++;
-        console.log('User idle detected');
+        console.log('User idle detected at:', new Date(idleStartTime).toLocaleTimeString());
         
         logEvent('idle_detected', {
           idlePeriods: metrics.idlePeriods,
@@ -344,12 +354,19 @@
     setInterval(function() {
       if (!monitoring) return;
       
+      // Calculate total idle time including current idle period
+      let currentIdleTime = metrics.totalIdleTime;
+      if (isIdle && idleStartTime) {
+        const ongoingIdleDuration = Date.now() - idleStartTime;
+        currentIdleTime += ongoingIdleDuration;
+      }
+      
       const sessionDuration = Date.now() - metrics.sessionStart;
       const summary = {
         sessionDuration: Math.round(sessionDuration / 1000), // seconds
         tabSwitches: metrics.tabSwitches,
         idlePeriods: metrics.idlePeriods,
-        totalIdleTime: Math.round(metrics.totalIdleTime / 1000), // seconds
+        totalIdleTime: Math.round(currentIdleTime / 1000), // seconds
         focusLostCount: metrics.focusLost,
         suspiciousPatterns: metrics.suspiciousPatterns.length,
         activityScore: calculateActivityScore()
@@ -401,10 +418,17 @@
   window.getActivitySummary = function() {
     // For candidates, return their metrics
     if (monitoring) {
+      // Calculate total idle time including current idle period
+      let currentIdleTime = metrics.totalIdleTime;
+      if (isIdle && idleStartTime) {
+        const ongoingIdleDuration = Date.now() - idleStartTime;
+        currentIdleTime += ongoingIdleDuration;
+      }
+      
       return {
         tabSwitches: metrics.tabSwitches,
         idlePeriods: metrics.idlePeriods,
-        totalIdleSeconds: Math.round(metrics.totalIdleTime / 1000),
+        totalIdleSeconds: Math.round(currentIdleTime / 1000),
         suspiciousPatterns: metrics.suspiciousPatterns,
         activityScore: calculateActivityScore(),
         sessionDurationMinutes: Math.round((Date.now() - metrics.sessionStart) / 60000)
@@ -422,10 +446,18 @@
   window.saveActivitySummary = function() {
     if (!monitoring) return;
     
+    // Check if currently idle and add that time
+    let finalIdleTime = metrics.totalIdleTime;
+    if (isIdle && idleStartTime) {
+      const currentIdleDuration = Date.now() - idleStartTime;
+      finalIdleTime += currentIdleDuration;
+      console.log('Adding current idle period to final summary:', Math.round(currentIdleDuration / 1000), 'seconds');
+    }
+    
     const finalSummary = {
       tabSwitches: metrics.tabSwitches,
       idlePeriods: metrics.idlePeriods,
-      totalIdleSeconds: Math.round(metrics.totalIdleTime / 1000),
+      totalIdleSeconds: Math.round(finalIdleTime / 1000),
       suspiciousPatterns: metrics.suspiciousPatterns,
       activityScore: calculateActivityScore(),
       sessionDurationMinutes: Math.round((Date.now() - metrics.sessionStart) / 60000),
