@@ -665,12 +665,25 @@
         
         // Ended sessions go to the ended list
         if (session.terminated && session.terminated.terminated) {
+          sessionInfo.terminatedAt = session.terminated.terminatedAt || session.created; // Add terminated timestamp
           archivedSessions.push(sessionInfo); // Using archivedSessions array for ended sessions
         } else {
           // Active or In Progress sessions
           activeSessions.push(sessionInfo);
           totalUsers += userCount;
         }
+      });
+      
+      // Sort ended sessions by terminated time (most recent first)
+      archivedSessions.sort((a, b) => {
+        const timeA = a.terminatedAt || a.created || 0;
+        const timeB = b.terminatedAt || b.created || 0;
+        return timeB - timeA; // Descending order (newest first)
+      });
+      
+      // Sort active sessions by created time (most recent first)
+      activeSessions.sort((a, b) => {
+        return (b.created || 0) - (a.created || 0); // Descending order
       });
       
       // Update stats
