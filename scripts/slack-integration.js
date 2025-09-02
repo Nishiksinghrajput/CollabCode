@@ -145,16 +145,32 @@
     
     // Format activity analysis if available
     let activitySection = '';
+    let engagementLevel = 'Not tracked';
     if (activitySummary) {
+      // Calculate engagement level
+      if (activitySummary.activityScore > 80) {
+        engagementLevel = 'High';
+      } else if (activitySummary.activityScore > 60) {
+        engagementLevel = 'Medium';
+      } else {
+        engagementLevel = 'Low';
+      }
+      
       const scoreEmoji = activitySummary.activityScore > 80 ? '✅' : 
                          activitySummary.activityScore > 60 ? '⚠️' : '🚨';
+      
+      // Calculate idle percentage
+      const idlePercentage = Math.round((activitySummary.totalIdleSeconds / (activitySummary.sessionDurationMinutes * 60)) * 100);
+      
       activitySection = `
         <div style="margin-top: 10px; padding: 8px; background: rgba(66,165,245,0.1); border-radius: 4px;">
-          <strong>📊 Activity Analysis:</strong>
-          <div>Activity Score: ${scoreEmoji} ${activitySummary.activityScore}%</div>
-          ${activitySummary.tabSwitches > 0 ? `<div>• Tab Switches: ${activitySummary.tabSwitches}</div>` : ''}
-          ${activitySummary.idlePeriods > 0 ? `<div>• Idle Periods: ${activitySummary.idlePeriods}</div>` : ''}
-          ${activitySummary.suspiciousPatterns.length > 0 ? `<div>• ⚠️ Suspicious Patterns: ${activitySummary.suspiciousPatterns.length}</div>` : ''}
+          <strong>📊 Candidate Behavior Analysis:</strong>
+          <div>Engagement Level: ${scoreEmoji} ${engagementLevel} (Score: ${activitySummary.activityScore}/100)</div>
+          <div>• Tab Switches: ${activitySummary.tabSwitches} ${activitySummary.tabSwitches > 10 ? '⚠️ (High)' : ''}</div>
+          <div>• Idle Periods: ${activitySummary.idlePeriods} times</div>
+          <div>• Total Idle Time: ${Math.round(activitySummary.totalIdleSeconds / 60)} min (${idlePercentage}% of session)</div>
+          ${activitySummary.suspiciousPatterns && activitySummary.suspiciousPatterns.length > 0 ? 
+            `<div>• Notable Behaviors: ${activitySummary.suspiciousPatterns.length} detected</div>` : ''}
           <div>• Session Duration: ${activitySummary.sessionDurationMinutes} minutes</div>
         </div>
       `;
@@ -220,18 +236,42 @@
       const activityColor = activitySummary.activityScore > 80 ? '#4caf50' :
                            activitySummary.activityScore > 60 ? '#ff9800' : '#ff0000';
       
+      // Calculate idle percentage
+      const idlePercentage = Math.round((activitySummary.totalIdleSeconds / (activitySummary.sessionDurationMinutes * 60)) * 100);
+      
+      // Determine engagement emoji and text
+      let engagementEmoji = '✅';
+      let engagementText = 'High Engagement';
+      if (activitySummary.activityScore < 60) {
+        engagementEmoji = '🚨';
+        engagementText = 'Low Engagement';
+      } else if (activitySummary.activityScore < 80) {
+        engagementEmoji = '⚠️';
+        engagementText = 'Medium Engagement';
+      }
+      
       slackPayload.attachments.push({
         color: activityColor,
-        title: "📊 Candidate Activity Analysis",
+        title: "📊 Candidate Behavior Metrics",
         fields: [
           {
+            title: "Engagement Level",
+            value: `${engagementEmoji} ${engagementText}`,
+            short: true
+          },
+          {
             title: "Activity Score",
-            value: `${activitySummary.activityScore}%`,
+            value: `${activitySummary.activityScore}/100`,
             short: true
           },
           {
             title: "Tab Switches",
-            value: activitySummary.tabSwitches.toString(),
+            value: `${activitySummary.tabSwitches}${activitySummary.tabSwitches > 10 ? ' ⚠️' : ''}`,
+            short: true
+          },
+          {
+            title: "Idle Time",
+            value: `${Math.round(activitySummary.totalIdleSeconds / 60)}min (${idlePercentage}%)`,
             short: true
           },
           {
@@ -245,9 +285,9 @@
             short: true
           }
         ],
-        footer: activitySummary.suspiciousPatterns.length > 0 ? 
-                `⚠️ ${activitySummary.suspiciousPatterns.length} suspicious patterns detected` : 
-                "Normal activity patterns"
+        footer: activitySummary.suspiciousPatterns && activitySummary.suspiciousPatterns.length > 0 ? 
+                `⚠️ ${activitySummary.suspiciousPatterns.length} notable behaviors detected` : 
+                "✅ Normal activity patterns"
       });
     }
     
