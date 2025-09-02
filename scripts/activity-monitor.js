@@ -52,8 +52,23 @@
       .ref(`sessions/${sessionCode}/activity_summary`)
       .on('value', function(snapshot) {
         const summary = snapshot.val();
-        if (summary && window.updateActivityDashboard) {
-          window.updateActivityDashboard(summary);
+        if (summary) {
+          // Cache for later use
+          window.lastActivitySummary = summary;
+          if (window.updateActivityDashboard) {
+            window.updateActivityDashboard(summary);
+          }
+        }
+      });
+    
+    // Also listen for final summary
+    firebase.database()
+      .ref(`sessions/${sessionCode}/activity_final_summary`)
+      .on('value', function(snapshot) {
+        const finalSummary = snapshot.val();
+        if (finalSummary) {
+          window.lastActivitySummary = finalSummary;
+          console.log('Final activity summary received:', finalSummary);
         }
       });
     
@@ -363,16 +378,50 @@
   
   // 9. Get summary for export
   window.getActivitySummary = function() {
-    if (!monitoring) return null;
+    // For candidates, return their metrics
+    if (monitoring) {
+      return {
+        tabSwitches: metrics.tabSwitches,
+        idlePeriods: metrics.idlePeriods,
+        totalIdleSeconds: Math.round(metrics.totalIdleTime / 1000),
+        suspiciousPatterns: metrics.suspiciousPatterns,
+        activityScore: calculateActivityScore(),
+        sessionDurationMinutes: Math.round((Date.now() - metrics.sessionStart) / 60000)
+      };
+    }
+    // For interviewers, get the last saved summary from Firebase
+    else if (window.lastActivitySummary) {
+      return window.lastActivitySummary;
+    }
     
-    return {
+    return null;
+  };
+  
+  // Save final activity summary when session ends
+  window.saveActivitySummary = function() {
+    if (!monitoring) return;
+    
+    const finalSummary = {
       tabSwitches: metrics.tabSwitches,
       idlePeriods: metrics.idlePeriods,
       totalIdleSeconds: Math.round(metrics.totalIdleTime / 1000),
       suspiciousPatterns: metrics.suspiciousPatterns,
       activityScore: calculateActivityScore(),
-      sessionDurationMinutes: Math.round((Date.now() - metrics.sessionStart) / 60000)
+      sessionDurationMinutes: Math.round((Date.now() - metrics.sessionStart) / 60000),
+      finalReport: true,
+      timestamp: Date.now()
     };
+    
+    // Save to Firebase
+    if (window.firebase && sessionCode) {
+      firebase.database()
+        .ref(`sessions/${sessionCode}/activity_final_summary`)
+        .set(finalSummary);
+      
+      console.log('Activity summary saved:', finalSummary);
+    }
+    
+    return finalSummary;
   };
   
   // 10. Update interviewer UI

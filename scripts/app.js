@@ -43,9 +43,11 @@
 
     // Enable/disable join button
     function updateJoinButton() {
+      const privacyConsent = document.getElementById('candidatePrivacyConsent');
       candidateJoinBtn.disabled = 
         !candidateName.value.trim() || 
-        candidateSessionCode.value.length !== 6;
+        candidateSessionCode.value.length !== 6 ||
+        !privacyConsent.checked;
     }
 
     candidateName.addEventListener('input', updateJoinButton);
@@ -53,6 +55,12 @@
       this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
       updateJoinButton();
     });
+    
+    // Privacy consent checkbox
+    const privacyConsent = document.getElementById('candidatePrivacyConsent');
+    if (privacyConsent) {
+      privacyConsent.addEventListener('change', updateJoinButton);
+    }
 
     // Join session
     candidateJoinBtn.addEventListener('click', async function() {
@@ -81,10 +89,21 @@
           // Remove the security check message - just proceed
         }
         
-        // Initialize activity monitoring for candidates
+        // Initialize activity monitoring for candidates (with consent)
         if (window.initActivityMonitor) {
           console.log('Starting activity monitoring for candidate:', name);
           window.initActivityMonitor(sessionCode, name, 'candidate');
+          
+          // Log consent status
+          if (window.firebase) {
+            firebase.database()
+              .ref(`sessions/${sessionCode}/privacy_consent/${name}`)
+              .set({
+                consented: true,
+                timestamp: Date.now(),
+                consentedTo: 'Activity monitoring during interview session'
+              });
+          }
         }
         
         Auth.joinAsCandidate(name);
@@ -1135,6 +1154,123 @@
       });
   }
   
+  // Display activity tab data
+  function displayActivityTab(sessionCode) {
+    const container = document.getElementById('activity-tracking-data');
+    if (!container) return;
+    
+    // Start loading
+    container.innerHTML = '<p class="loading-message">Loading activity data...</p>';
+    
+    // Get activity data from Firebase
+    if (window.firebase) {
+      // Try to get final summary first, then regular summary
+      firebase.database()
+        .ref(`sessions/${sessionCode}/activity_final_summary`)
+        .once('value')
+        .then(snapshot => {
+          let activityData = snapshot.val();
+          
+          // If no final summary, try regular summary
+          if (!activityData) {
+            return firebase.database()
+              .ref(`sessions/${sessionCode}/activity_summary`)
+              .once('value');
+          }
+          return snapshot;
+        })
+        .then(snapshot => {
+          const activityData = snapshot.val();
+          
+          if (!activityData) {
+            container.innerHTML = `
+              <div style="padding: 20px; text-align: center; color: #666;">
+                <p>No activity data available for this session.</p>
+                <p style="font-size: 12px; margin-top: 10px;">Activity tracking may not have been enabled for this session.</p>
+              </div>
+            `;
+            return;
+          }
+          
+          // Display activity data
+          const scoreColor = activityData.activityScore > 80 ? '#4caf50' : 
+                           activityData.activityScore > 60 ? '#ff9800' : '#ff4444';
+          
+          container.innerHTML = `
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 8px; color: white; margin-bottom: 20px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <h3 style="margin: 0; font-size: 24px;">Activity Score</h3>
+                  <div style="font-size: 48px; font-weight: bold; color: ${scoreColor}; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    ${activityData.activityScore || 0}%
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 14px; opacity: 0.9;">Session Duration</div>
+                  <div style="font-size: 20px; font-weight: bold;">${activityData.sessionDurationMinutes || 0} min</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #42a5f5;">
+                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Tab Switches</div>
+                <div style="font-size: 24px; font-weight: bold; color: ${activityData.tabSwitches > 10 ? '#ff9800' : '#333'};">
+                  ${activityData.tabSwitches || 0}
+                </div>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #66bb6a;">
+                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Idle Periods</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  ${activityData.idlePeriods || 0}
+                </div>
+              </div>
+              
+              <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #ffa726;">
+                <div style="color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Total Idle Time</div>
+                <div style="font-size: 24px; font-weight: bold; color: #333;">
+                  ${activityData.totalIdleSeconds || 0}s
+                </div>
+              </div>
+            </div>
+            
+            ${activityData.suspiciousPatterns && activityData.suspiciousPatterns.length > 0 ? `
+              <div style="background: rgba(255,152,0,0.1); border: 1px solid rgba(255,152,0,0.3); border-radius: 8px; padding: 15px; margin-top: 20px;">
+                <h4 style="color: #ff9800; margin-top: 0;">⚠️ Suspicious Patterns Detected</h4>
+                <ul style="margin: 10px 0;">
+                  ${activityData.suspiciousPatterns.map(p => `
+                    <li style="color: #666; margin: 5px 0;">
+                      ${p.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
+                      ${p.duration ? `(${Math.round(p.duration/1000)}s)` : ''}
+                      ${p.size ? `(${p.size} chars)` : ''}
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            
+            ${activityData.finalReport ? `
+              <div style="margin-top: 20px; padding: 10px; background: #e8f5e9; border-radius: 4px; text-align: center; color: #2e7d32;">
+                ✅ Final activity report saved at session end
+              </div>
+            ` : ''}
+          `;
+        })
+        .catch(error => {
+          console.error('Error loading activity data:', error);
+          container.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #f44336;">
+              <p>Error loading activity data.</p>
+              <p style="font-size: 12px; margin-top: 10px;">${error.message}</p>
+            </div>
+          `;
+        });
+    } else {
+      container.innerHTML = '<p>Firebase not initialized</p>';
+    }
+  }
+  
   // View session details with notes
   function viewSessionDetails(sessionCode, sessionData) {
     console.log('viewSessionDetails called with:', sessionCode, sessionData);
@@ -1336,6 +1472,12 @@
           if (tabName === 'security' && window.SessionTracking) {
             const sessionCode = document.getElementById('detail-session-code').textContent;
             window.SessionTracking.displaySecurityTab(sessionCode);
+          }
+          
+          // If activity tab, load activity data
+          if (tabName === 'activity') {
+            const sessionCode = document.getElementById('detail-session-code').textContent;
+            displayActivityTab(sessionCode);
           }
         }
       });

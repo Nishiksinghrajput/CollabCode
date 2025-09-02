@@ -171,6 +171,33 @@
           <small>Your interviewer will provide this code</small>
         </div>
         
+        <div style="margin: 20px 0; padding: 15px; background: rgba(66, 165, 245, 0.05); border: 1px solid rgba(66, 165, 245, 0.2); border-radius: 8px;">
+          <div style="display: flex; align-items: center; margin-bottom: 10px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#42a5f5" stroke-width="2" style="margin-right: 8px;">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <strong style="color: #42a5f5; font-size: 14px;">Privacy & Monitoring Notice</strong>
+          </div>
+          <label style="display: flex; align-items: flex-start; cursor: pointer; font-size: 13px; color: #555;">
+            <input type="checkbox" id="candidatePrivacyConsent" style="margin-right: 10px; margin-top: 2px; cursor: pointer;">
+            <span>
+              I understand that during this interview session, the following may be monitored for evaluation purposes:
+              <ul style="margin: 8px 0 8px 20px; padding: 0; font-size: 12px; color: #666; line-height: 1.5;">
+                <li>Tab switching and window focus events</li>
+                <li>Activity patterns and idle time</li>
+                <li>General interaction metrics</li>
+              </ul>
+              <span style="font-size: 11px; color: #888;">
+                This data is used solely for interview assessment and is handled in accordance with our privacy policy.
+              </span>
+              <br>
+              <a href="https://www.atomtickets.com/privacy" target="_blank" style="color: #42a5f5; text-decoration: none; margin-top: 8px; display: inline-block; font-size: 12px;">
+                📄 View Atomtickets Privacy Policy →
+              </a>
+            </span>
+          </label>
+        </div>
+        
         <button id="candidateJoinBtn" class="primary-btn" disabled>Join Session</button>
       </div>
     </div>
@@ -375,6 +402,7 @@
             <button class="detail-tab" data-tab="code">💻 Code</button>
             <button class="detail-tab" data-tab="info">ℹ️ Info</button>
             <button class="detail-tab" data-tab="security">🔒 Security</button>
+            <button class="detail-tab" data-tab="activity">📊 Activity</button>
           </div>
           
           <div class="tab-content" id="notes-tab" style="display: block;">
@@ -444,6 +472,15 @@
               <h4>🔍 Detailed Login & Device Information</h4>
               <div id="detailed-tracking-info">
                 <!-- Will be populated with fun detailed view -->
+              </div>
+            </div>
+          </div>
+          
+          <div class="tab-content" id="activity-tab" style="display: none;">
+            <div class="activity-info-display" style="padding: 20px;">
+              <h4>📊 Candidate Activity Analysis</h4>
+              <div id="activity-tracking-data">
+                <p class="loading-message">Loading activity data...</p>
               </div>
             </div>
           </div>
