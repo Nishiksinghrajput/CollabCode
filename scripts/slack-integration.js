@@ -97,31 +97,47 @@
     
     // Get session data from Firebase if needed
     if (currentSessionData && window.firebase) {
-      window.firebase.database()
-        .ref(`sessions/${currentSessionCode}/interviewerNotes`)
-        .once('value')
-        .then(snapshot => {
-          const notes = snapshot.val();
-          const message = formatSlackMessage(notes);
-          previewContent.innerHTML = message.preview;
-        })
-        .catch(error => {
-          console.error('Error loading notes for Slack:', error);
-          previewContent.innerHTML = '<div style="color: #f44336;">Error loading session data</div>';
-        });
+      // Get both notes and activity data
+      Promise.all([
+        window.firebase.database()
+          .ref(`sessions/${currentSessionCode}/interviewerNotes`)
+          .once('value'),
+        window.firebase.database()
+          .ref(`sessions/${currentSessionCode}/activity_final_summary`)
+          .once('value')
+          .then(snapshot => {
+            if (!snapshot.val()) {
+              // Try regular summary if no final summary
+              return window.firebase.database()
+                .ref(`sessions/${currentSessionCode}/activity_summary`)
+                .once('value');
+            }
+            return snapshot;
+          })
+      ]).then(([notesSnapshot, activitySnapshot]) => {
+        const notes = notesSnapshot.val();
+        const activityData = activitySnapshot.val();
+        const message = formatSlackMessage(notes, activityData);
+        previewContent.innerHTML = message.preview;
+      }).catch(error => {
+        console.error('Error loading data for Slack:', error);
+        previewContent.innerHTML = '<div style="color: #f44336;">Error loading session data</div>';
+      });
     }
   }
   
   // Format message for Slack
-  function formatSlackMessage(notes) {
+  function formatSlackMessage(notes, activitySummary) {
     const candidateName = getCandidateName();
     const recommendation = notes?.recommendation || 'No recommendation';
     const rating = notes?.rating?.overall || 0;
     const notesContent = notes?.content || 'No notes';
     const tags = notes?.tags || [];
     
-    // Get activity summary if available
-    const activitySummary = window.getActivitySummary ? window.getActivitySummary() : null;
+    // Use passed activity summary or try to get from window
+    if (!activitySummary && window.getActivitySummary) {
+      activitySummary = window.getActivitySummary();
+    }
     
     // Color based on recommendation
     const colors = {
@@ -146,6 +162,9 @@
     // Format activity analysis if available
     let activitySection = '';
     let engagementLevel = 'Not tracked';
+    
+    console.log('Activity summary for Slack:', activitySummary);
+    
     if (activitySummary) {
       // Calculate engagement level
       if (activitySummary.activityScore > 80) {
@@ -333,13 +352,30 @@
     }
     
     try {
-      // Get the latest notes
-      const snapshot = await window.firebase.database()
-        .ref(`sessions/${currentSessionCode}/interviewerNotes`)
-        .once('value');
+      // Get the latest notes and activity data
+      const [notesSnapshot, activitySnapshot] = await Promise.all([
+        window.firebase.database()
+          .ref(`sessions/${currentSessionCode}/interviewerNotes`)
+          .once('value'),
+        window.firebase.database()
+          .ref(`sessions/${currentSessionCode}/activity_final_summary`)
+          .once('value')
+          .then(snapshot => {
+            if (!snapshot.val()) {
+              // Try regular summary if no final summary
+              return window.firebase.database()
+                .ref(`sessions/${currentSessionCode}/activity_summary`)
+                .once('value');
+            }
+            return snapshot;
+          })
+      ]);
       
-      const notes = snapshot.val();
-      const message = formatSlackMessage(notes);
+      const notes = notesSnapshot.val();
+      const activityData = activitySnapshot.val();
+      console.log('Sending to Slack with activity data:', activityData);
+      
+      const message = formatSlackMessage(notes, activityData);
       
       // Send to Slack via our secure API endpoint
       // NOTE: Webhook URL is configured server-side as environment variable
