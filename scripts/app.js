@@ -562,12 +562,21 @@
     const archivedTabBtn = document.getElementById('archivedTabBtn');
     const bulkActionsBar = document.getElementById('bulkActionsBar');
     
+    // Update time column header based on tab
+    function updateTimeColumnHeader(isArchived) {
+      const timeHeader = document.querySelector('#sessionsTable th:nth-child(6)');
+      if (timeHeader) {
+        timeHeader.textContent = isArchived ? 'Ended' : 'Created';
+      }
+    }
+    
     if (activeTabBtn && !activeTabBtn.hasAttribute('data-handler')) {
       activeTabBtn.setAttribute('data-handler', 'true');
       activeTabBtn.addEventListener('click', function() {
         this.classList.add('active');
         archivedTabBtn.classList.remove('active');
         bulkActionsBar.style.display = 'flex';
+        updateTimeColumnHeader(false); // Update header to "Created"
         // Update bulk action buttons for active/in-progress sessions
         const endSelectedBtn = document.getElementById('endSelectedBtn');
         const deleteAllBtn = document.getElementById('endAllSessionsBtn');
@@ -589,6 +598,7 @@
         this.classList.add('active');
         activeTabBtn.classList.remove('active');
         bulkActionsBar.style.display = 'flex'; // Show bulk actions for ended sessions too
+        updateTimeColumnHeader(true); // Update header to "Ended"
         // Update bulk action buttons for ended sessions (delete only)
         const endSelectedBtn = document.getElementById('endSelectedBtn');
         const deleteAllBtn = document.getElementById('endAllSessionsBtn');
@@ -675,9 +685,14 @@
       });
       
       // Sort ended sessions by terminated time (most recent first)
+      console.log('Sorting ended sessions. Count:', archivedSessions.length);
       archivedSessions.sort((a, b) => {
         const timeA = a.terminatedAt || a.created || 0;
         const timeB = b.terminatedAt || b.created || 0;
+        // Debug log for first few sessions
+        if (archivedSessions.indexOf(a) < 3) {
+          console.log(`Session ${a.code}: terminatedAt=${a.terminatedAt}, created=${a.created}, timeA=${timeA}`);
+        }
         return timeB - timeA; // Descending order (newest first)
       });
       
@@ -816,8 +831,19 @@
           statusBadge = '<span class="status-badge status-active" style="background-color: #4caf50;">Active</span>' + fraudBadge;
         }
         
-        // Format time
-        const createdTime = new Date(session.created).toLocaleTimeString();
+        // Format time - show terminated time for ended sessions, created time for active
+        let displayTime;
+        if (isArchivedView && session.terminatedAt) {
+          const terminatedDate = new Date(session.terminatedAt);
+          displayTime = terminatedDate.toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        } else {
+          displayTime = new Date(session.created).toLocaleTimeString();
+        }
         
         row.innerHTML = `
           <td>
@@ -836,7 +862,7 @@
               ${allParticipants}
             </div>
           </td>
-          <td class="session-time">${createdTime}</td>
+          <td class="session-time" title="${isArchivedView ? 'Ended' : 'Created'}: ${displayTime}">${displayTime}</td>
           <td>
             <div class="action-buttons-modern">
               <button class="action-btn view-btn" data-code="${session.code}" title="View Details">
