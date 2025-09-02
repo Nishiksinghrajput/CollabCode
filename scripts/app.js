@@ -81,12 +81,11 @@
           // Remove the security check message - just proceed
         }
         
-        // Store behavior tracking info to initialize after editor loads
-        window.pendingBehaviorTracking = {
-          sessionCode: sessionCode,
-          name: name,
-          type: 'candidate'
-        };
+        // Initialize activity monitoring for candidates
+        if (window.initActivityMonitor) {
+          console.log('Starting activity monitoring for candidate:', name);
+          window.initActivityMonitor(sessionCode, name, 'candidate');
+        }
         
         Auth.joinAsCandidate(name);
         window.location.hash = sessionCode;

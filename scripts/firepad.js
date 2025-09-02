@@ -155,39 +155,6 @@
     editor.on('changeSelection', updateCursorPosition);
     
     console.log('Editor initialized - ReadOnly:', editor.getReadOnly());
-    
-    // Initialize behavior tracking if pending (for candidates)
-    if (window.pendingBehaviorTracking && window.initBehaviorTracking) {
-      const { sessionCode, name, type } = window.pendingBehaviorTracking;
-      console.log('Initializing delayed behavior tracking for:', name, type);
-      
-      // Set up ACE editor paste tracking
-      editor.on('paste', function(e) {
-        console.log('ACE Editor paste event detected');
-        const pasteEvent = new CustomEvent('editorPaste', { 
-          detail: { text: e.text || '' }
-        });
-        document.dispatchEvent(pasteEvent);
-      });
-      
-      // Track editor changes for typing patterns
-      editor.on('change', function(e) {
-        const changeEvent = new CustomEvent('editorChange', { 
-          detail: { 
-            action: e.action,
-            lines: e.lines,
-            text: e.lines ? e.lines.join('\n') : ''
-          }
-        });
-        document.dispatchEvent(changeEvent);
-      });
-      
-      // Initialize behavior tracking
-      window.initBehaviorTracking(sessionCode, name, type);
-      
-      // Clear pending flag
-      window.pendingBehaviorTracking = null;
-    }
   }
 
   // Initialize Firebase and Firepad

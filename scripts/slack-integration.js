@@ -120,8 +120,8 @@
     const notesContent = notes?.content || 'No notes';
     const tags = notes?.tags || [];
     
-    // Get behavior summary if available
-    const behaviorSummary = window.getBehaviorSummaryForNotes ? window.getBehaviorSummaryForNotes() : null;
+    // Get activity summary if available
+    const activitySummary = window.getActivitySummary ? window.getActivitySummary() : null;
     
     // Color based on recommendation
     const colors = {
@@ -143,19 +143,19 @@
     const color = colors[recommendation] || '#666666';
     const label = labels[recommendation] || recommendation;
     
-    // Format behavior analysis if available
-    let behaviorSection = '';
-    if (behaviorSummary && behaviorSummary.riskScore) {
-      const riskEmoji = behaviorSummary.riskScore.level === 'HIGH' ? '🚨' : 
-                        behaviorSummary.riskScore.level === 'MEDIUM' ? '⚠️' : '✅';
-      behaviorSection = `
-        <div style="margin-top: 10px; padding: 8px; background: rgba(255,152,0,0.1); border-radius: 4px;">
-          <strong>🔍 Behavior Analysis:</strong>
-          <div>Risk Level: ${riskEmoji} ${behaviorSummary.riskScore.level} (Score: ${behaviorSummary.riskScore.score}/100)</div>
-          ${behaviorSummary.tabSwitches > 0 ? `<div>• Tab Switches: ${behaviorSummary.tabSwitches}</div>` : ''}
-          ${behaviorSummary.largePastes > 0 ? `<div>• Large Pastes: ${behaviorSummary.largePastes}</div>` : ''}
-          ${behaviorSummary.aiPatterns > 0 ? `<div>• AI Patterns Detected: Yes</div>` : ''}
-          ${behaviorSummary.averageWPM > 0 ? `<div>• Typing Speed: ${behaviorSummary.averageWPM} WPM</div>` : ''}
+    // Format activity analysis if available
+    let activitySection = '';
+    if (activitySummary) {
+      const scoreEmoji = activitySummary.activityScore > 80 ? '✅' : 
+                         activitySummary.activityScore > 60 ? '⚠️' : '🚨';
+      activitySection = `
+        <div style="margin-top: 10px; padding: 8px; background: rgba(66,165,245,0.1); border-radius: 4px;">
+          <strong>📊 Activity Analysis:</strong>
+          <div>Activity Score: ${scoreEmoji} ${activitySummary.activityScore}%</div>
+          ${activitySummary.tabSwitches > 0 ? `<div>• Tab Switches: ${activitySummary.tabSwitches}</div>` : ''}
+          ${activitySummary.idlePeriods > 0 ? `<div>• Idle Periods: ${activitySummary.idlePeriods}</div>` : ''}
+          ${activitySummary.suspiciousPatterns.length > 0 ? `<div>• ⚠️ Suspicious Patterns: ${activitySummary.suspiciousPatterns.length}</div>` : ''}
+          <div>• Session Duration: ${activitySummary.sessionDurationMinutes} minutes</div>
         </div>
       `;
     }
@@ -167,7 +167,7 @@
       <div><strong>⭐ Rating:</strong> ${'★'.repeat(rating)}${'☆'.repeat(5-rating)} (${rating}/5)</div>
       <div><strong>🏷️ Tags:</strong> ${tags.length > 0 ? tags.join(', ') : 'None'}</div>
       <div><strong>📝 Notes:</strong> ${notesContent.substring(0, 200)}${notesContent.length > 200 ? '...' : ''}</div>
-      ${behaviorSection}
+      ${activitySection}
       <div style="margin-top: 10px; color: #888;">Session: ${currentSessionCode}</div>
     `;
     
@@ -215,39 +215,39 @@
       }]
     };
     
-    // Add behavior analysis as a separate attachment if available
-    if (behaviorSummary && behaviorSummary.riskScore) {
-      const riskColor = behaviorSummary.riskScore.level === 'HIGH' ? '#ff0000' :
-                       behaviorSummary.riskScore.level === 'MEDIUM' ? '#ff9800' : '#4caf50';
+    // Add activity analysis as a separate attachment if available
+    if (activitySummary) {
+      const activityColor = activitySummary.activityScore > 80 ? '#4caf50' :
+                           activitySummary.activityScore > 60 ? '#ff9800' : '#ff0000';
       
       slackPayload.attachments.push({
-        color: riskColor,
-        title: "🔍 Candidate Behavior Analysis",
+        color: activityColor,
+        title: "📊 Candidate Activity Analysis",
         fields: [
           {
-            title: "Risk Level",
-            value: `${behaviorSummary.riskScore.level} (${behaviorSummary.riskScore.score}/100)`,
+            title: "Activity Score",
+            value: `${activitySummary.activityScore}%`,
             short: true
           },
           {
             title: "Tab Switches",
-            value: behaviorSummary.tabSwitches.toString(),
+            value: activitySummary.tabSwitches.toString(),
             short: true
           },
           {
-            title: "Large Pastes",
-            value: behaviorSummary.largePastes.toString(),
+            title: "Idle Periods",
+            value: activitySummary.idlePeriods.toString(),
             short: true
           },
           {
-            title: "Avg Typing Speed",
-            value: `${behaviorSummary.averageWPM} WPM`,
+            title: "Session Duration",
+            value: `${activitySummary.sessionDurationMinutes} min`,
             short: true
           }
         ],
-        footer: behaviorSummary.riskScore.factors.length > 0 ? 
-                `Risk Factors: ${behaviorSummary.riskScore.factors.join(', ')}` : 
-                "No significant risk factors detected"
+        footer: activitySummary.suspiciousPatterns.length > 0 ? 
+                `⚠️ ${activitySummary.suspiciousPatterns.length} suspicious patterns detected` : 
+                "Normal activity patterns"
       });
     }
     
