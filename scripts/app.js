@@ -83,7 +83,10 @@
         
         // Initialize behavior tracking for candidates only
         if (window.initBehaviorTracking) {
+          console.log('Initializing behavior tracking for candidate:', name);
           window.initBehaviorTracking(sessionCode, name, 'candidate');
+        } else {
+          console.warn('Behavior tracking module not loaded');
         }
         
         Auth.joinAsCandidate(name);

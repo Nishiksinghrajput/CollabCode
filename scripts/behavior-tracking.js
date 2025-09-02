@@ -48,8 +48,10 @@
   // 1. Tab Switch Detection
   function trackTabSwitches() {
     let lastSwitchTime = Date.now();
+    console.log('Setting up tab switch tracking...');
     
     document.addEventListener('visibilitychange', function() {
+      console.log('Visibility changed, hidden:', document.hidden, 'tracking:', isTracking);
       if (!isTracking) return;
       
       const now = Date.now();
@@ -58,6 +60,7 @@
       if (document.hidden) {
         tabSwitchCount++;
         lastSwitchTime = now;
+        console.log('Tab switch detected! Count:', tabSwitchCount);
         
         // Log to Firebase
         const eventData = {
@@ -97,16 +100,23 @@
   
   // 2. Paste Event Detection
   function trackPasteEvents() {
+    console.log('Setting up paste tracking...');
+    
     // Track paste in CodeMirror
     if (window.codeMirror) {
+      console.log('CodeMirror found, attaching paste listener');
       window.codeMirror.on('paste', function(cm, event) {
+        console.log('CodeMirror paste event detected');
         if (!isTracking) return;
         handlePasteEvent(event);
       });
+    } else {
+      console.log('CodeMirror not found, will track global paste only');
     }
     
     // Also track global paste
     document.addEventListener('paste', function(e) {
+      console.log('Global paste event detected, tracking:', isTracking);
       if (!isTracking) return;
       handlePasteEvent(e);
     });
