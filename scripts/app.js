@@ -81,13 +81,12 @@
           // Remove the security check message - just proceed
         }
         
-        // Initialize behavior tracking for candidates only
-        if (window.initBehaviorTracking) {
-          console.log('Initializing behavior tracking for candidate:', name);
-          window.initBehaviorTracking(sessionCode, name, 'candidate');
-        } else {
-          console.warn('Behavior tracking module not loaded');
-        }
+        // Store behavior tracking info to initialize after editor loads
+        window.pendingBehaviorTracking = {
+          sessionCode: sessionCode,
+          name: name,
+          type: 'candidate'
+        };
         
         Auth.joinAsCandidate(name);
         window.location.hash = sessionCode;

@@ -102,19 +102,20 @@
   function trackPasteEvents() {
     console.log('Setting up paste tracking...');
     
-    // Track paste in CodeMirror
-    if (window.codeMirror) {
-      console.log('CodeMirror found, attaching paste listener');
-      window.codeMirror.on('paste', function(cm, event) {
-        console.log('CodeMirror paste event detected');
-        if (!isTracking) return;
-        handlePasteEvent(event);
-      });
-    } else {
-      console.log('CodeMirror not found, will track global paste only');
-    }
+    // Listen for ACE editor paste events (sent from firepad.js)
+    document.addEventListener('editorPaste', function(e) {
+      console.log('Editor paste event received:', e.detail);
+      if (!isTracking) return;
+      
+      const fakeEvent = {
+        clipboardData: {
+          getData: function() { return e.detail.text; }
+        }
+      };
+      handlePasteEvent(fakeEvent);
+    });
     
-    // Also track global paste
+    // Also track global paste (for paste outside editor)
     document.addEventListener('paste', function(e) {
       console.log('Global paste event detected, tracking:', isTracking);
       if (!isTracking) return;
@@ -198,24 +199,29 @@
   
   // 3. Typing Pattern Analysis
   function trackTypingPatterns() {
-    if (!window.codeMirror) return;
+    console.log('Setting up typing pattern tracking...');
     
     let keystrokeBuffer = [];
     let lastEventTime = Date.now();
     
-    window.codeMirror.on('change', function(cm, change) {
-      if (!isTracking || change.origin === 'setValue') return;
+    // Listen for ACE editor change events (sent from firepad.js)
+    document.addEventListener('editorChange', function(e) {
+      if (!isTracking) return;
+      
+      const change = e.detail;
+      if (change.action === 'setValue') return; // Ignore programmatic changes
       
       const now = Date.now();
       const timeDiff = now - lastEventTime;
       lastEventTime = now;
       
       // Track keystroke timing
-      if (change.origin === 'input' || change.origin === '+input') {
+      if (change.action === 'insert' || change.action === 'insertText') {
         typingMetrics.totalKeystrokes++;
         
         // Calculate WPM from recent keystrokes
-        keystrokeBuffer.push({ time: now, chars: change.text.join('').length });
+        const textLength = change.text ? change.text.length : 0;
+        keystrokeBuffer.push({ time: now, chars: textLength });
         
         // Keep only last 5 seconds of keystrokes
         keystrokeBuffer = keystrokeBuffer.filter(k => now - k.time < 5000);
@@ -240,9 +246,10 @@
       }
       
       // Detect large insertions (potential paste via typing)
-      if (change.text.join('').length > 50 && timeDiff < 100) {
+      const insertedText = change.text || '';
+      if (insertedText.length > 50 && timeDiff < 100) {
         notifyInterviewer('instant_code_appearance', {
-          size: change.text.join('').length,
+          size: insertedText.length,
           timeGap: timeDiff,
           severity: 'high'
         });
