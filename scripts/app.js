@@ -1156,23 +1156,43 @@
   
   // Display activity tab data
   function displayActivityTab(sessionCode) {
+    console.log('displayActivityTab called for session:', sessionCode);
     const container = document.getElementById('activity-tracking-data');
-    if (!container) return;
+    if (!container) {
+      console.error('Activity container not found');
+      return;
+    }
     
     // Start loading
     container.innerHTML = '<p class="loading-message">Loading activity data...</p>';
     
     // Get activity data from Firebase
-    if (window.firebase) {
+    if (window.firebase && window.firebase.database) {
+      console.log('Fetching activity data from Firebase...');
+      console.log('Firebase available:', !!window.firebase);
+      console.log('Firebase database available:', !!window.firebase.database);
+      
+      // Also check for any activity logs
+      firebase.database()
+        .ref(`sessions/${sessionCode}/activity_log`)
+        .limitToLast(5)
+        .once('value')
+        .then(snapshot => {
+          const logs = snapshot.val();
+          console.log('Activity logs found:', logs);
+        });
+      
       // Try to get final summary first, then regular summary
       firebase.database()
         .ref(`sessions/${sessionCode}/activity_final_summary`)
         .once('value')
         .then(snapshot => {
           let activityData = snapshot.val();
+          console.log('Final summary data:', activityData);
           
           // If no final summary, try regular summary
           if (!activityData) {
+            console.log('No final summary, checking regular summary...');
             return firebase.database()
               .ref(`sessions/${sessionCode}/activity_summary`)
               .once('value');
@@ -1181,6 +1201,7 @@
         })
         .then(snapshot => {
           const activityData = snapshot.val();
+          console.log('Activity data retrieved:', activityData);
           
           if (!activityData) {
             container.innerHTML = `

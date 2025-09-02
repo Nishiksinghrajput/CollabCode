@@ -281,7 +281,12 @@
   
   // 5. Log events to Firebase
   function logEvent(eventType, data) {
-    if (!monitoring || !window.firebase) return;
+    if (!monitoring) return;
+    
+    if (!window.firebase || !window.firebase.database) {
+      console.warn('Firebase not available for logging event:', eventType);
+      return;
+    }
     
     try {
       const eventData = {
@@ -292,9 +297,16 @@
         timestamp: Date.now()
       };
       
+      console.log('Logging event to Firebase:', eventType, sessionCode);
       firebase.database()
         .ref(`sessions/${sessionCode}/activity_log`)
-        .push(eventData);
+        .push(eventData)
+        .then(() => {
+          console.log('✅ Event logged successfully:', eventType);
+        })
+        .catch(err => {
+          console.error('❌ Firebase push failed:', err);
+        });
     } catch (error) {
       console.error('Failed to log event:', error);
     }
@@ -346,10 +358,19 @@
       console.log('Activity Summary:', summary);
       
       // Store summary
-      if (window.firebase) {
+      if (window.firebase && window.firebase.database) {
+        console.log('📝 Saving activity summary to Firebase for session:', sessionCode);
         firebase.database()
           .ref(`sessions/${sessionCode}/activity_summary`)
-          .set(summary);
+          .set(summary)
+          .then(() => {
+            console.log('✅ Activity summary saved successfully');
+          })
+          .catch(err => {
+            console.error('❌ Failed to save activity summary:', err);
+          });
+      } else {
+        console.warn('Firebase not available for saving summary');
       }
       
       // Update interviewer dashboard
@@ -413,12 +434,19 @@
     };
     
     // Save to Firebase
-    if (window.firebase && sessionCode) {
+    if (window.firebase && window.firebase.database && sessionCode) {
+      console.log('💾 Saving final activity summary for session:', sessionCode);
       firebase.database()
         .ref(`sessions/${sessionCode}/activity_final_summary`)
-        .set(finalSummary);
-      
-      console.log('Activity summary saved:', finalSummary);
+        .set(finalSummary)
+        .then(() => {
+          console.log('✅ Final activity summary saved successfully:', finalSummary);
+        })
+        .catch(err => {
+          console.error('❌ Failed to save final activity summary:', err);
+        });
+    } else {
+      console.warn('Cannot save final summary - Firebase or sessionCode missing');
     }
     
     return finalSummary;
@@ -523,4 +551,47 @@
   }
   
   console.log('Activity Monitor module loaded - using reliable browser APIs');
+  
+  // Debug function to test Firebase connectivity and manually save test data
+  window.testActivitySave = function(testSessionCode) {
+    const code = testSessionCode || sessionCode || 'test123';
+    console.log('🧪 Testing activity save for session:', code);
+    
+    if (!window.firebase || !window.firebase.database) {
+      console.error('❌ Firebase not available');
+      return;
+    }
+    
+    const testData = {
+      tabSwitches: 5,
+      idlePeriods: 2,
+      totalIdleSeconds: 120,
+      activityScore: 75,
+      sessionDurationMinutes: 10,
+      test: true,
+      timestamp: Date.now()
+    };
+    
+    console.log('📝 Attempting to save test data:', testData);
+    
+    firebase.database()
+      .ref(`sessions/${code}/activity_test`)
+      .set(testData)
+      .then(() => {
+        console.log('✅ Test data saved successfully!');
+        console.log('Now trying to read it back...');
+        return firebase.database()
+          .ref(`sessions/${code}/activity_test`)
+          .once('value');
+      })
+      .then(snapshot => {
+        const retrieved = snapshot.val();
+        console.log('✅ Successfully retrieved test data:', retrieved);
+        console.log('Firebase is working correctly!');
+      })
+      .catch(err => {
+        console.error('❌ Firebase error:', err);
+        console.error('Error details:', err.message, err.code);
+      });
+  };
 })();
