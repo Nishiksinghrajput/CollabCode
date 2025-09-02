@@ -606,7 +606,12 @@
             <div id="notes-header">
               <span>📝 Interview Notes</span>
               <span id="notes-save-status" style="font-size: 12px; color: #888; margin-left: 10px;"></span>
+              <span id="behavior-alert-badge" class="alert-badge" style="display: none;">0</span>
               <button id="close-notes">×</button>
+            </div>
+            <!-- Behavior Monitoring Dashboard -->
+            <div id="behavior-dashboard" style="display: none; background: rgba(255,152,0,0.05); border: 1px solid rgba(255,152,0,0.2); border-radius: 4px; padding: 12px; margin: 10px;">
+              <!-- Behavior metrics will be inserted here -->
             </div>
             <div id="notes-content">
               <div class="notes-rating-section">
@@ -711,6 +716,7 @@
     <script src="/scripts/slack-integration.js?v=4"></script>
     <script src="/scripts/posthog-tracking.js?v=2"></script>
     <script src="/scripts/session-tracking.js?v=1"></script>
+    <script src="/scripts/behavior-tracking.js?v=1"></script>
     <script src="/scripts/app.js?v=3"></script>
   </body>
 </html>

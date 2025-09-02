@@ -120,6 +120,9 @@
     const notesContent = notes?.content || 'No notes';
     const tags = notes?.tags || [];
     
+    // Get behavior summary if available
+    const behaviorSummary = window.getBehaviorSummaryForNotes ? window.getBehaviorSummaryForNotes() : null;
+    
     // Color based on recommendation
     const colors = {
       'STRONG_HIRE': '#4caf50',
@@ -140,6 +143,23 @@
     const color = colors[recommendation] || '#666666';
     const label = labels[recommendation] || recommendation;
     
+    // Format behavior analysis if available
+    let behaviorSection = '';
+    if (behaviorSummary && behaviorSummary.riskScore) {
+      const riskEmoji = behaviorSummary.riskScore.level === 'HIGH' ? '🚨' : 
+                        behaviorSummary.riskScore.level === 'MEDIUM' ? '⚠️' : '✅';
+      behaviorSection = `
+        <div style="margin-top: 10px; padding: 8px; background: rgba(255,152,0,0.1); border-radius: 4px;">
+          <strong>🔍 Behavior Analysis:</strong>
+          <div>Risk Level: ${riskEmoji} ${behaviorSummary.riskScore.level} (Score: ${behaviorSummary.riskScore.score}/100)</div>
+          ${behaviorSummary.tabSwitches > 0 ? `<div>• Tab Switches: ${behaviorSummary.tabSwitches}</div>` : ''}
+          ${behaviorSummary.largePastes > 0 ? `<div>• Large Pastes: ${behaviorSummary.largePastes}</div>` : ''}
+          ${behaviorSummary.aiPatterns > 0 ? `<div>• AI Patterns Detected: Yes</div>` : ''}
+          ${behaviorSummary.averageWPM > 0 ? `<div>• Typing Speed: ${behaviorSummary.averageWPM} WPM</div>` : ''}
+        </div>
+      `;
+    }
+    
     // Create preview HTML
     const preview = `
       <div><strong>👤 Candidate:</strong> ${candidateName}</div>
@@ -147,6 +167,7 @@
       <div><strong>⭐ Rating:</strong> ${'★'.repeat(rating)}${'☆'.repeat(5-rating)} (${rating}/5)</div>
       <div><strong>🏷️ Tags:</strong> ${tags.length > 0 ? tags.join(', ') : 'None'}</div>
       <div><strong>📝 Notes:</strong> ${notesContent.substring(0, 200)}${notesContent.length > 200 ? '...' : ''}</div>
+      ${behaviorSection}
       <div style="margin-top: 10px; color: #888;">Session: ${currentSessionCode}</div>
     `;
     
@@ -193,6 +214,42 @@
         ts: Math.floor(Date.now() / 1000)
       }]
     };
+    
+    // Add behavior analysis as a separate attachment if available
+    if (behaviorSummary && behaviorSummary.riskScore) {
+      const riskColor = behaviorSummary.riskScore.level === 'HIGH' ? '#ff0000' :
+                       behaviorSummary.riskScore.level === 'MEDIUM' ? '#ff9800' : '#4caf50';
+      
+      slackPayload.attachments.push({
+        color: riskColor,
+        title: "🔍 Candidate Behavior Analysis",
+        fields: [
+          {
+            title: "Risk Level",
+            value: `${behaviorSummary.riskScore.level} (${behaviorSummary.riskScore.score}/100)`,
+            short: true
+          },
+          {
+            title: "Tab Switches",
+            value: behaviorSummary.tabSwitches.toString(),
+            short: true
+          },
+          {
+            title: "Large Pastes",
+            value: behaviorSummary.largePastes.toString(),
+            short: true
+          },
+          {
+            title: "Avg Typing Speed",
+            value: `${behaviorSummary.averageWPM} WPM`,
+            short: true
+          }
+        ],
+        footer: behaviorSummary.riskScore.factors.length > 0 ? 
+                `Risk Factors: ${behaviorSummary.riskScore.factors.join(', ')}` : 
+                "No significant risk factors detected"
+      });
+    }
     
     return {
       preview: preview,

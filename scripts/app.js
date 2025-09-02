@@ -81,6 +81,11 @@
           // Remove the security check message - just proceed
         }
         
+        // Initialize behavior tracking for candidates only
+        if (window.initBehaviorTracking) {
+          window.initBehaviorTracking(sessionCode, name, 'candidate');
+        }
+        
         Auth.joinAsCandidate(name);
         window.location.hash = sessionCode;
         
