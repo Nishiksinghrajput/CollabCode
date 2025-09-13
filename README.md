@@ -70,7 +70,7 @@
 
 <details>
 <summary><b>Interviewer Login</b></summary>
-<img src="docs/screenshots/interviewer-login.png" alt="Interviewer Login" width="100%">
+<img src="docs/screenshots/interviewer-login2.png" alt="Interviewer Login" width="100%">
 
 - Secure JWT authentication
 - Clean, professional interface
@@ -98,8 +98,7 @@
 </details>
 
 <details>
-<summary><b>Interview Notes & Feedback</b></summary>
-<img src="docs/screenshots/interview-notes.png" alt="Interview Notes" width="100%">
+<summary><b>Interview Notes & Feedback (Feature)</b></summary>
 
 **Advanced note-taking features:**
 - Structured feedback forms
@@ -113,13 +112,14 @@
 </details>
 
 <details>
-<summary><b>Session Analytics</b></summary>
-<img src="docs/screenshots/session-analytics.png" alt="Session Analytics" width="100%">
+<summary><b>Session Analytics (Feature)</b></summary>
 
 - Activity timeline
 - Code changes history
 - Time spent analysis
 - Candidate behavior tracking
+- Tab switch detection
+- Copy/paste monitoring
 </details>
 
 ## ⚡ Quick Start
