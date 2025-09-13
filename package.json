@@ -1,7 +1,7 @@
 {
-  "name": "sneakers-secure",
-  "version": "2.0.0",
-  "description": "Secure collaborative code editor with Node.js backend",
+  "name": "opencollab",
+  "version": "1.0.0",
+  "description": "Real-time collaborative code editor for technical interviews",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

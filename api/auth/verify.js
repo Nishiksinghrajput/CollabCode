@@ -5,7 +5,12 @@
 
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Ensure required environment variables are set
+if (!JWT_SECRET) {
+  console.error('Missing required environment variable: JWT_SECRET');
+}
 
 module.exports = async (req, res) => {
   // Enable CORS

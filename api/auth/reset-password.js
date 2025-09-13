@@ -57,8 +57,9 @@ module.exports = async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // Create reset URL
-    const resetUrl = `https://sneakers-atom.vercel.app/reset-password?token=${resetToken}`;
+    // Create reset URL (use your app domain)
+    const appDomain = process.env.APP_DOMAIN || 'http://localhost:3000';
+    const resetUrl = `${appDomain}/reset-password?token=${resetToken}`;
 
     if (SENDGRID_API_KEY) {
       // Send email via SendGrid

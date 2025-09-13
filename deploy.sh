@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Simple deployment script for Sneakers to Vercel
+# Simple deployment script for OpenCollab to Vercel
 
-echo "🚀 Deploying to Vercel..."
-echo "========================"
+echo "🚀 Deploying OpenCollab to Vercel..."
+echo "====================================="
 
 # Deploy to production
 vercel --prod --yes
@@ -11,6 +11,12 @@ vercel --prod --yes
 echo ""
 echo "✅ Deployment complete!"
 echo ""
-echo "🔗 Production URL: https://sneakers-atom.vercel.app/"
+echo "🔗 Your app is now live on Vercel!"
 echo ""
-echo "📝 Remember to check environment variables in Vercel Dashboard if needed."
+echo "📝 Remember to set environment variables in Vercel Dashboard:"
+echo "   - ADMIN_EMAIL"
+echo "   - ADMIN_PASSWORD_HASH"
+echo "   - JWT_SECRET"
+echo "   - FIREBASE_PROJECT_ID"
+echo "   - FIREBASE_CLIENT_EMAIL"
+echo "   - FIREBASE_PRIVATE_KEY"
