@@ -405,7 +405,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <p align="center">
   <strong>⭐ Star us on GitHub — it helps!</strong><br>
-  Made with ❤️ by the <a href="https://github.com/humancto/CollabCode/graphs/contributors">OpenCollab Community</a>
+  Made with ❤️ by <a href="https://www.humancto.com">HumanCTO</a>
+</p>
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/humancto">
+    <img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee">
+  </a>
 </p>
 
 <p align="center">
