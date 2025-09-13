@@ -316,13 +316,13 @@ APP_DOMAIN=https://your-domain.com
 
 ## 🌟 Success Stories
 
-> "OpenCollab transformed our hiring process. Setup took 5 minutes, and candidates love the clean interface."  
+> "CollabCode transformed our hiring process. Setup took 5 minutes, and candidates love the clean interface."  
 > — **Sarah Chen**, Engineering Manager at TechCorp
 
 > "Finally, a collaborative editor that just works. No complex setup, no accounts, just pure functionality."  
 > — **Mike Johnson**, Senior Developer
 
-> "We've conducted over 80 interviews using OpenCollab. The real-time sync is flawless!"  
+> "We've conducted over 80 interviews using CollabCode. The real-time sync is flawless!"  
 > — **Emily Rodriguez**, Tech Lead
 
 ## 📊 Stats & Metrics
