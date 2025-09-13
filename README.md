@@ -51,7 +51,8 @@
 ### 🎬 See It In Action
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/humancto/collabcode-demo.gif" alt="OpenCollab Demo" width="100%">
+  <!-- Add demo GIF here: docs/screenshots/demo.gif -->
+<img src="docs/screenshots/demo.gif" alt="OpenCollab Demo" width="100%">
 </p>
 
 **Try it now:** [OpenCollab Live Demo](https://opencollab-demo.vercel.app)
@@ -60,7 +61,7 @@
 
 <details open>
 <summary><b>Beautiful Landing Page</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/landing-page.png" alt="Landing Page" width="100%">
+<img src="docs/screenshots/landing-page.png" alt="Landing Page" width="100%">
 
 - Animated code particles background
 - Clear role selection (Interviewer vs Candidate)
@@ -69,7 +70,7 @@
 
 <details>
 <summary><b>Interviewer Login</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/interviewer-login.png" alt="Interviewer Login" width="100%">
+<img src="docs/screenshots/interviewer-login.png" alt="Interviewer Login" width="100%">
 
 - Secure JWT authentication
 - Clean, professional interface
@@ -78,7 +79,7 @@
 
 <details>
 <summary><b>Admin Dashboard - Session Management</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/admin-dashboard.png" alt="Admin Dashboard" width="100%">
+<img src="docs/screenshots/admin-dashboard.png" alt="Admin Dashboard" width="100%">
 
 - View all active/ended sessions
 - Real-time session statistics
@@ -88,7 +89,7 @@
 
 <details>
 <summary><b>Live Coding Session</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/coding-session.png" alt="Coding Session" width="100%">
+<img src="docs/screenshots/coding-session.png" alt="Coding Session" width="100%">
 
 - Real-time collaborative editor
 - Multiple language support
@@ -98,7 +99,7 @@
 
 <details>
 <summary><b>Interview Notes & Feedback</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/interview-notes.png" alt="Interview Notes" width="100%">
+<img src="docs/screenshots/interview-notes.png" alt="Interview Notes" width="100%">
 
 **Advanced note-taking features:**
 - Structured feedback forms
@@ -113,7 +114,7 @@
 
 <details>
 <summary><b>Session Analytics</b></summary>
-<img src="https://user-images.githubusercontent.com/humancto/session-analytics.png" alt="Session Analytics" width="100%">
+<img src="docs/screenshots/session-analytics.png" alt="Session Analytics" width="100%">
 
 - Activity timeline
 - Code changes history
