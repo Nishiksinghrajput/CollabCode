@@ -320,10 +320,10 @@ APP_DOMAIN=https://your-domain.com
 > — **Sarah Chen**, Engineering Manager at TechCorp
 
 > "Finally, a collaborative editor that just works. No complex setup, no accounts, just pure functionality."  
-> — **Mike Johnson**, Senior Developer at StartupXYZ
+> — **Mike Johnson**, Senior Developer
 
-> "We've conducted over 500 interviews using OpenCollab. The real-time sync is flawless!"  
-> — **Emily Rodriguez**, Tech Lead at DevHub
+> "We've conducted over 80 interviews using OpenCollab. The real-time sync is flawless!"  
+> — **Emily Rodriguez**, Tech Lead
 
 ## 📊 Stats & Metrics
 
