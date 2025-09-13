@@ -67,7 +67,7 @@ module.exports = async (req, res) => {
 
       const msg = {
         to: email,
-        from: 'noreply@atomtickets.com', // Must be verified in SendGrid
+        from: 'noreply@yourcompany.com', // Must be verified in SendGrid
         subject: 'Password Reset Request',
         text: `Click this link to reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
         html: `

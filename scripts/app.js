@@ -1728,104 +1728,17 @@
       init();
     }
   }
-  // Load movie posters for landing page background
-  function loadMoviePosters() {
-    const postersGrid = document.getElementById('moviePostersGrid');
-    if (!postersGrid) return;
-    
-    // Create a timeout promise to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout')), 5000)
-    );
-    
-    // Fetch movies from Atomtickets API with timeout
-    // Use a proxy endpoint to hide the actual API URL
-    const apiEndpoint = window.MOVIE_API_ENDPOINT || '/api/movies' || 'data:application/json,{"productions":[]}';
-    
-    Promise.race([
-      fetch(apiEndpoint),
-      timeoutPromise
-    ])
-      .then(response => {
-        if (!response.ok) throw new Error('API response not ok');
-        return response.json();
-      })
-      .then(data => {
-        if (!data?.productions || !Array.isArray(data.productions) || data.productions.length === 0) {
-          throw new Error('No productions data');
-        }
-        
-        // Create poster tiles for first 30 movies
-        const movies = data.productions.slice(0, 30);
-        const postersHTML = movies.map((movie, index) => {
-          const posterUrl = movie.coverImages?.LARGE || movie.coverImages?.SMALL || '';
-          const title = movie.title || '';
-          const rating = movie.mpaaRating || 'NR';
-          const releaseDate = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : '';
-          const shareLink = movie.shareLink || '#';
-          
-          // Skip if no poster image
-          if (!posterUrl) {
-            return `<div class="movie-poster-tile fallback" style="background: hsl(${index * 12}, 70%, 50%); animation-delay: ${(index % 10) * 0.1}s"></div>`;
-          }
-          
-          // Add animation delay for staggered appearance
-          const delay = (index % 10) * 0.1;
-          
-          return `
-            <a href="${shareLink}" target="_blank" rel="noopener" class="movie-poster-tile" style="animation-delay: ${delay}s">
-              <img src="${posterUrl}" alt="${title}" loading="lazy" onerror="this.parentElement.style.background='hsl(${index * 12}, 70%, 50%)'">
-              <div class="poster-overlay">
-                <div class="poster-title">${title}</div>
-                <div class="poster-meta">
-                  <span class="poster-rating">${rating}</span>
-                  <span class="poster-year">${releaseDate}</span>
-                </div>
-              </div>
-            </a>
-          `;
-        }).join('');
-        
-        postersGrid.innerHTML = postersHTML;
-        
-        // Clone for infinite scroll effect
-        postersGrid.innerHTML += postersHTML;
-      })
-      .catch(error => {
-        console.log('Using fallback movie poster grid:', error.message);
-        // Create a beautiful fallback gradient grid
-        const fallbackTiles = [
-          { color: '#FF6B6B', title: 'Action' },
-          { color: '#4ECDC4', title: 'Comedy' },
-          { color: '#45B7D1', title: 'Drama' },
-          { color: '#96CEB4', title: 'Thriller' },
-          { color: '#FFEAA7', title: 'Romance' },
-          { color: '#DDA0DD', title: 'Sci-Fi' },
-          { color: '#98D8C8', title: 'Horror' },
-          { color: '#FFD700', title: 'Adventure' },
-          { color: '#FF69B4', title: 'Fantasy' },
-          { color: '#00CED1', title: 'Mystery' }
-        ];
-        
-        const fallbackHTML = Array(30).fill(0).map((_, i) => {
-          const tile = fallbackTiles[i % fallbackTiles.length];
-          return `
-            <div class="movie-poster-tile fallback" style="background: linear-gradient(135deg, ${tile.color} 0%, ${tile.color}88 100%); animation-delay: ${(i % 10) * 0.1}s">
-              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: white; font-weight: 600; font-size: 14px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                ${tile.title}
-              </div>
-            </div>
-          `;
-        }).join('');
-        
-        postersGrid.innerHTML = fallbackHTML + fallbackHTML;
-      });
+  // Initialize background gradient (removed movie poster functionality)
+  function initializeBackground() {
+    // Background is now handled by pure CSS gradient
+    // No external API calls needed
+    console.log('Background initialized');
   }
   
   // Call on page load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadMoviePosters);
+    document.addEventListener('DOMContentLoaded', initializeBackground);
   } else {
-    loadMoviePosters();
+    initializeBackground();
   }
 })();
