@@ -10,15 +10,20 @@ const jwt = require('jsonwebtoken');
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID || 'sneakers-688b6',
+      projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
     }),
-    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID || 'sneakers-688b6'}.firebaseio.com`
+    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
   });
 }
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Ensure required environment variables are set
+if (!JWT_SECRET || !process.env.FIREBASE_PROJECT_ID) {
+  console.error('Missing required environment variables');
+}
 
 // Generate secure session ID
 function generateSecureSessionId() {

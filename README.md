@@ -1,120 +1,47 @@
-# 🚀 Sneakers - Collaborative Code Interview Platform
+# OpenCollab 🚀
 
-A secure, real-time collaborative code editor for technical interviews, deployed on Vercel with Firebase Realtime Database.
+A secure, real-time collaborative coding platform for conducting technical interviews and pair programming sessions. Built with Node.js, Firebase, and vanilla JavaScript for maximum performance and simplicity.
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
-![Security](https://img.shields.io/badge/security-production--ready-green.svg)
-![Languages](https://img.shields.io/badge/languages-16+-orange.svg)
-
-## 🔗 Live Application
-
-**Production URL:** https://sneakers-atom.vercel.app/
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-green)
+![Firebase](https://img.shields.io/badge/firebase-realtime-orange)
 
 ## ✨ Features
 
 ### Core Functionality
-- **🔄 Real-time Collaboration** - See changes instantly as users type
-- **🌍 16+ Language Support** - JavaScript, Python, Java, C++, Go, Rust, and more
-- **▶️ Live Code Execution** - Run code directly in the browser
-- **🎨 Multiple Themes** - 8 editor themes including Monokai, GitHub, Solarized
-- **👥 User Presence** - See who's online with live indicators
-- **📱 Responsive Design** - Works on desktop and mobile devices
+- **Real-time Code Collaboration** - Multiple users can edit code simultaneously with live cursor tracking
+- **Multi-language Support** - JavaScript, Python, Java, C++, Go, Ruby, and more (16+ languages)
+- **Syntax Highlighting** - Powered by ACE Editor for a professional coding experience
+- **Live Code Execution** - Run code directly in the browser (JavaScript) or via Piston API
+- **Session Management** - Create, join, and manage coding sessions with unique session codes
 
 ### Interview Features
-- **🔐 Secure Authentication** - JWT-based admin login (no client-side passwords!)
-- **🔢 6-Digit Session Codes** - Easy to share session identifiers
-- **👋 Join/Leave Notifications** - Get notified when users enter or leave
-- **🚪 Session Termination** - Interviewers can end sessions and kick out users
-- **📊 Session Management** - View and manage all active sessions
-- **💾 Persistent Sessions** - Code remains even after users leave
+- **Candidate Tracking** - Monitor candidate activity, typing patterns, and code changes
+- **Session Recording** - Complete history of all code changes and activities
+- **Export to Slack** - Share session results and feedback directly to your team
+- **Admin Dashboard** - Manage all sessions, view analytics, and track performance
+- **Question Templates** - Pre-loaded coding challenges and interview questions
 
-## 🏗️ Architecture
+### Security & Privacy
+- **JWT Authentication** - Secure admin access with token-based authentication
+- **Session Isolation** - Each interview session is completely isolated
+- **No Account Required** - Candidates can join sessions without creating accounts
+- **Environment Variable Protection** - All sensitive data stored securely
 
-```
-Frontend (Vercel CDN)
-    ↓
-API Endpoints (Vercel Serverless Functions)
-    ↓
-Database (Firebase Realtime Database)
-```
-
-### Security Features
-- **No client-side credentials** - All authentication through secure API
-- **JWT tokens** for session management
-- **Bcrypt password hashing**
-- **Security headers** (XSS, CSRF protection)
-- **Firebase Security Rules** for database access control
-
-## 🚀 Deployment
-
-### Quick Deploy to Production
-
-```bash
-./deploy.sh
-```
-
-This will deploy to Vercel. The app will be available at your Vercel URL.
-
-### Environment Variables
-
-Set these in [Vercel Dashboard](https://vercel.com/dashboard) → Settings → Environment Variables:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `ADMIN_EMAIL` | Admin login email | `hiring@atomtickets.com` |
-| `ADMIN_PASSWORD_HASH` | Bcrypt hashed password | `$2a$10$...` |
-| `JWT_SECRET` | Secret for JWT tokens | Generate with `openssl rand -hex 32` |
-| `FIREBASE_PROJECT_ID` | Your Firebase project ID | `sneakers-688b6` |
-
-## 👤 User Access
-
-### For Interviewers
-
-1. Go to https://sneakers-atom.vercel.app/
-2. Click **"I'm an Interviewer"**
-3. Login with credentials:
-   - Email: `hiring@atomtickets.com`
-   - Password: `AtomHiring2024!`
-4. Create a new session or manage existing ones
-5. Share the 6-digit code with candidates
-
-### For Candidates
-
-1. Go to https://sneakers-atom.vercel.app/
-2. Click **"I'm a Candidate"**
-3. Enter your full name
-4. Enter the 6-digit session code from your interviewer
-5. Start coding!
-
-## 🔑 Password Management
-
-### Reset Admin Password
-
-1. Generate new password hash:
-```bash
-node generate-password-hash.js "YourNewSecurePassword123!"
-```
-
-2. Copy the generated hash
-
-3. Update in Vercel Dashboard:
-   - Go to Settings → Environment Variables
-   - Update `ADMIN_PASSWORD_HASH`
-   - Redeploy (happens automatically)
-
-## 🛠️ Local Development
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 16+
+- Node.js 16.0.0 or higher
 - npm or yarn
-- Vercel CLI
+- Firebase account (free tier works)
+- Vercel account (for deployment, optional)
 
-### Setup
+### Installation
 
 1. **Clone the repository**
 ```bash
-git clone [your-repo-url]
-cd sneakers
+git clone https://github.com/yourusername/OpenCollab.git
+cd OpenCollab
 ```
 
 2. **Install dependencies**
@@ -122,122 +49,283 @@ cd sneakers
 npm install
 ```
 
-3. **Install Vercel CLI**
+3. **Set up Firebase**
+   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
+   - Enable Realtime Database
+   - Get your Firebase configuration from Project Settings
+   - Generate a service account key for server-side access
+
+4. **Configure environment variables**
 ```bash
-npm i -g vercel
+cp .env.example .env.production
 ```
 
-4. **Run locally**
+Edit `.env.production` with your configuration:
+```env
+# Admin Credentials
+ADMIN_EMAIL=admin@yourcompany.com
+ADMIN_PASSWORD_HASH=<generated_hash>
+JWT_SECRET=<random_secret_key>
+
+# Firebase Configuration (for server-side)
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk@your-project.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+
+# Optional: Slack Integration
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+```
+
+5. **Generate admin password hash**
 ```bash
+node generate-password-hash.js "YourSecurePassword123!"
+```
+Copy the generated hash to your `.env.production` file as `ADMIN_PASSWORD_HASH`
+
+6. **Update Firebase client configuration**
+Edit `lib/firebase-sdk.js` with your Firebase project details:
+```javascript
+var config = {
+  apiKey: "YOUR_FIREBASE_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  projectId: "YOUR_PROJECT_ID"
+};
+```
+
+7. **Set up Firebase Security Rules**
+In Firebase Console, go to Realtime Database → Rules and use the rules from `database.rules.secure.json`:
+```json
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "sessions": {
+      "$sessionId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['code', 'language', 'activity'])"
+      }
+    },
+    "users": {
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid"
+      }
+    }
+  }
+}
+```
+
+8. **Start the development server**
+```bash
+npm run dev
+# or for Vercel development
 vercel dev
 ```
 
-5. **Open in browser**
+Visit `http://localhost:3000` to see the application running!
+
+## 🌐 Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. **Install Vercel CLI**
+```bash
+npm install -g vercel
 ```
-http://localhost:3000
+
+2. **Deploy**
+```bash
+vercel
 ```
+
+3. **Set environment variables in Vercel**
+   - Go to your project in Vercel Dashboard
+   - Navigate to Settings → Environment Variables
+   - Add all variables from your `.env.production` file
+
+### Deploy to Other Platforms
+
+The application can be deployed to any platform that supports Node.js:
+- Heroku
+- Google Cloud Platform
+- AWS Lambda
+- DigitalOcean App Platform
+- Railway
 
 ## 📁 Project Structure
 
 ```
-sneakers/
-├── api/                    # Vercel Serverless Functions
-│   └── auth/              # Authentication endpoints
-│       ├── login.js       # Secure login with JWT
-│       ├── verify.js      # Token verification
-│       ├── logout.js      # Session termination
-│       └── reset-password.js  # Password reset
+OpenCollab/
+├── api/                    # Serverless API endpoints
+│   ├── auth/              # Authentication endpoints
+│   │   ├── login.js      # Admin login
+│   │   ├── verify.js     # Token verification
+│   │   └── logout.js     # Session termination
+│   ├── sessions/          # Session management
+│   │   └── create.js     # Create new sessions
+│   └── activity/          # Activity tracking
+│       └── save.js       # Save user activity
 ├── scripts/               # Client-side JavaScript
-│   ├── app.js            # Main application controller
-│   ├── auth-api.js       # Secure auth module (no passwords!)
-│   ├── firepad.js        # Collaboration logic
-│   └── code-executor.js  # Code execution handler
-├── styles/               # CSS files
-├── lib/                  # Libraries
-│   └── firebase-sdk.js   # Firebase config (public keys only)
-├── index.html            # Main application
-├── reset-password.html   # Password reset page
-├── vercel.json          # Vercel configuration
-├── firebase.json        # Firebase database config
-└── deploy.sh           # Deployment script
+│   ├── app.js            # Main application logic
+│   ├── auth-api.js       # Authentication handling
+│   ├── firepad.js        # Collaboration engine
+│   └── language-templates.js # Code templates
+├── styles/                # CSS styles
+├── lib/                   # Libraries and SDKs
+│   └── firebase-sdk.js   # Firebase configuration
+├── index.html            # Main application page
+├── admin.html            # Admin dashboard
+└── package.json          # Dependencies and scripts
 ```
 
-## 🔒 Security Notes
+## 🔧 Configuration
 
-### Firebase Configuration
-The Firebase config in `lib/firebase-sdk.js` contains API keys that are **intentionally public**. This is by design:
-- Firebase API keys are meant to be public
-- They only identify your project, not grant access
-- Security is enforced through:
-  1. Firebase Security Rules (`database.rules.secure.json`)
-  2. Backend authentication (Vercel API)
-  3. CORS and domain restrictions
+### Environment Variables
 
-### Production Security
-- ✅ All passwords hashed with bcrypt
-- ✅ JWT tokens with expiration
-- ✅ No sensitive data in client code
-- ✅ Security headers on all responses
-- ✅ Database rules restrict access
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ADMIN_EMAIL` | Admin login email | Yes |
+| `ADMIN_PASSWORD_HASH` | Bcrypt hash of admin password | Yes |
+| `JWT_SECRET` | Secret key for JWT tokens | Yes |
+| `FIREBASE_PROJECT_ID` | Your Firebase project ID | Yes |
+| `FIREBASE_CLIENT_EMAIL` | Firebase service account email | Yes |
+| `FIREBASE_PRIVATE_KEY` | Firebase service account private key | Yes |
+| `SLACK_WEBHOOK_URL` | Slack webhook for notifications | No |
+| `SENDGRID_API_KEY` | SendGrid API key for emails | No |
 
-## 📊 API Endpoints
+### Customization
 
-All endpoints are serverless functions on Vercel:
+- **Branding**: Update the title and branding in `index.html` and `admin.html`
+- **Themes**: Add new editor themes in `scripts/app.js`
+- **Languages**: Add new language support in `scripts/language-templates.js`
+- **Code Execution**: Configure Piston API or other execution services
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/auth/login` | POST | Admin login with email/password |
-| `/api/auth/verify` | GET | Verify JWT token validity |
-| `/api/auth/logout` | POST | Terminate session |
-| `/api/auth/reset-password` | POST | Initiate password reset |
-| `/api/auth/update-password` | POST | Update password with reset token |
+## 🛡️ Security Best Practices
+
+1. **Environment Variables**
+   - Never commit `.env` files
+   - Use strong, unique passwords
+   - Rotate JWT secrets regularly
+
+2. **Firebase Security**
+   - Use strict database rules
+   - Enable Firebase App Check for additional security
+   - Monitor usage in Firebase Console
+
+3. **Production Deployment**
+   - Always use HTTPS
+   - Enable CORS properly
+   - Implement rate limiting
+   - Monitor for suspicious activity
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Write clean, documented code
+- Follow existing code style
+- Add tests for new features
+- Update documentation as needed
+
+## 📊 API Documentation
+
+### Authentication Endpoints
+
+**POST /api/auth/login**
+```json
+{
+  "email": "admin@company.com",
+  "password": "password123"
+}
+```
+
+**GET /api/auth/verify**
+Headers: `Authorization: Bearer <token>`
+
+**POST /api/auth/logout**
+Headers: `Authorization: Bearer <token>`
+
+### Session Management
+
+**POST /api/sessions/create**
+Headers: `Authorization: Bearer <token>`
+
+Returns:
+```json
+{
+  "success": true,
+  "sessionId": "ABC123",
+  "created": 1234567890
+}
+```
 
 ## 🐛 Troubleshooting
 
-### Login Not Working?
-- Verify environment variables are set in Vercel Dashboard
+### Common Issues
+
+**Login not working?**
+- Check environment variables are set correctly
+- Verify password hash matches
 - Check browser console for errors
-- Ensure you're using the correct credentials
 
-### Firebase Not Syncing?
-- Check Firebase connection status (console logs)
-- Verify Firebase project is active
+**Firebase not syncing?**
+- Verify Firebase configuration is correct
 - Check database rules allow access
+- Ensure Firebase project is active
 
-### Deployment Issues?
-- Ensure you're logged into Vercel CLI
-- Check `vercel.json` configuration
-- Verify all dependencies in `package.json`
+**Code execution failing?**
+- Check Piston API is accessible
+- Verify language is supported
+- Check for rate limiting
 
-## 🤝 Tech Stack
+## 📈 Performance Optimization
 
-- **Frontend:** Vanilla JavaScript, HTML5, CSS3
-- **Backend:** Vercel Serverless Functions (Node.js)
-- **Database:** Firebase Realtime Database
-- **Editor:** ACE Editor with Firepad
-- **Authentication:** JWT + bcrypt
-- **Hosting:** Vercel (automatic scaling, global CDN)
-- **Code Execution:** Piston API
+- Uses WebSocket connections for real-time updates
+- Implements debouncing for code changes
+- Lazy loads language templates
+- Caches Firebase connections
+- Optimizes bundle sizes
 
-## 📈 Performance
+## 🚧 Roadmap
 
-- WebSocket connections for real-time sync
-- Global CDN via Vercel
-- Serverless functions for infinite scaling
-- Optimized bundle size
-- Connection pooling for Firebase
+- [ ] Video/Audio calling integration
+- [ ] AI-powered code suggestions
+- [ ] More language execution environments
+- [ ] Custom theme editor
+- [ ] Team collaboration features
+- [ ] Advanced analytics dashboard
+- [ ] Mobile app support
+- [ ] IDE plugins
 
-## 📄 License
+## 📝 License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 📞 Support
+## 🙏 Acknowledgments
 
-For issues or questions:
-- Email: infrastructure@atomtickets.com
-- Author: Archith
-- Open an issue on GitHub
+- Built with [ACE Editor](https://ace.c9.io/) for code editing
+- Real-time sync powered by [Firebase](https://firebase.google.com/)
+- Code execution via [Piston API](https://github.com/engineer-man/piston)
+- Inspired by the need for better technical interview tools
+
+## 💬 Support
+
+- **Issues**: [GitHub Issues](https://github.com/yourusername/OpenCollab/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/OpenCollab/discussions)
+- **Email**: support@yourcompany.com
 
 ---
 
-**Deployed with ❤️ on Vercel** | **Secured with JWT + bcrypt** | **No client-side passwords!**
+Made with ❤️ by the OpenCollab community

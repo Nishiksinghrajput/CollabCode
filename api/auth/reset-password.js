@@ -6,8 +6,13 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hiring@atomtickets.com';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Ensure required environment variables are set
+if (!ADMIN_EMAIL || !JWT_SECRET) {
+  console.error('Missing required environment variables: ADMIN_EMAIL or JWT_SECRET');
+}
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 
 module.exports = async (req, res) => {

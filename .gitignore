@@ -8,12 +8,14 @@ package-lock.json
 .env.production
 .env.development
 .env.example.filled
+*.env
 
 # Firebase
 firebase-admin-key.json
 serviceAccountKey.json
 firebase-debug.log
 .firebase/
+*.serviceaccount.json
 
 # IDE
 .vscode/
@@ -55,8 +57,23 @@ temp/
 *.crt
 auth.js
 credentials.json
+secrets.json
+private-keys/
 
 # Backups
 *.backup
 *.bak
+
+# Deployment
 .vercel
+.netlify
+.amplify
+
+# Local development
+.local/
+local-data/
+
+# System files
+Thumbs.db
+.Spotlight-V100
+.Trashes

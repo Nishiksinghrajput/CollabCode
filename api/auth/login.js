@@ -7,9 +7,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Admin credentials (use environment variables in production)
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hiring@atomtickets.com';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$10$AK4xnyU8Di5rwP7hJRxrv.l0WQv1/PmtwGV/QKPA2o9LsCpMCGOmO';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+// Ensure required environment variables are set
+if (!ADMIN_EMAIL || !ADMIN_PASSWORD_HASH || !JWT_SECRET) {
+  console.error('Missing required environment variables: ADMIN_EMAIL, ADMIN_PASSWORD_HASH, or JWT_SECRET');
+}
 
 module.exports = async (req, res) => {
   // Enable CORS

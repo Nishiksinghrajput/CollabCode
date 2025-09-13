@@ -6,8 +6,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-this';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'hiring@atomtickets.com';
+const JWT_SECRET = process.env.JWT_SECRET;
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+
+// Ensure required environment variables are set
+if (!JWT_SECRET || !ADMIN_EMAIL) {
+  console.error('Missing required environment variables: JWT_SECRET or ADMIN_EMAIL');
+}
 
 // In production, this would update a database
 // For now, it generates the new hash for manual update

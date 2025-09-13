@@ -72,8 +72,7 @@ bcrypt.hash(password, 10)
     console.log('- When logging in, bcrypt compares the entered password with this hash');
     console.log('- Even if someone gets the hash, they cannot recover the original password\n');
     
-    console.log('Current password:', password);
-    console.log('Email to use:', 'hiring@atomtickets.com');
+    console.log('Remember to set your ADMIN_EMAIL environment variable');
   })
   .catch(err => {
     console.error('❌ Error generating hash:', err);
