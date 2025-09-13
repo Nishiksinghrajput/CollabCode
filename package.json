@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "serve": "node serve.js",
+    "preview": "node serve.js",
     "build": "npm run build:client",
     "build:client": "echo 'Client is static, no build needed'",
     "deploy": "npm run build && npm start"
